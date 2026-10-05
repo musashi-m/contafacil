@@ -430,8 +430,21 @@ function getBillDueInfo(dueDateStr, status, nature = 'despesa') {
   }
 
   if (status === 'reserved') {
+    let dueDetails = '';
+    if (dueDateStr) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const [y, m, d] = dueDateStr.split('-').map(Number);
+      const due = new Date(y, m - 1, d);
+      due.setHours(0, 0, 0, 0);
+      const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays < 0) dueDetails = ` (Atrasada ${Math.abs(diffDays)}d)`;
+      else if (diffDays === 0) dueDetails = ' (Vence Hoje)';
+      else if (diffDays === 1) dueDetails = ' (Vence Amanhã)';
+      else dueDetails = ` (${d} ${MONTH_SHORT[m - 1]})`;
+    }
     return {
-      text: 'Reservado',
+      text: `Reservado${dueDetails}`,
       badgeClass: 'bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300 font-semibold border border-sky-400/30',
       isOverdue: false,
       isDueToday: false,
@@ -914,8 +927,8 @@ function renderHomeView() {
   if (totalReservadoVal) totalReservadoVal.textContent = formatCurrency(data.totalDespesasReservadas);
   if (totalReservadoSub) totalReservadoSub.textContent = `${data.countReservadas} ${data.countReservadas === 1 ? 'reservada' : 'reservadas'}`;
 
-  if (totalPagarVal) totalPagarVal.textContent = formatCurrency(data.totalDespesasAbertas);
-  if (totalPagarSub) totalPagarSub.textContent = `${data.countPendentesAbertas} ${data.countPendentesAbertas === 1 ? 'em aberto' : 'em aberto'}`;
+  if (totalPagarVal) totalPagarVal.textContent = formatCurrency(data.totalDespesasPendentes);
+  if (totalPagarSub) totalPagarSub.textContent = `${data.countPendentes} ${data.countPendentes === 1 ? 'a pagar' : 'a pagar'}`;
 
   // Barra de Progresso
   const progressPct = document.getElementById('home-progress-pct');
@@ -1235,7 +1248,7 @@ function renderBillsView() {
   if (ribbonReceitas) ribbonReceitas.textContent = formatCurrency(data.totalReceitasPrevistas);
   if (ribbonDespesas) ribbonDespesas.textContent = formatCurrency(data.totalDespesasPrevistas);
   if (ribbonReservado) ribbonReservado.textContent = formatCurrency(data.totalDespesasReservadas);
-  if (ribbonRestante) ribbonRestante.textContent = formatCurrency(data.totalDespesasAbertas);
+  if (ribbonRestante) ribbonRestante.textContent = formatCurrency(data.totalDespesasPendentes);
 
   // Contadores nas Abas de Filtro
   const countTodas = document.getElementById('count-tab-todas');
@@ -1245,7 +1258,7 @@ function renderBillsView() {
   const countAtrasadas = document.getElementById('count-tab-atrasadas');
 
   if (countTodas) countTodas.textContent = data.countTotal;
-  if (countAPagar) countAPagar.textContent = data.countPendentesAbertas;
+  if (countAPagar) countAPagar.textContent = data.countPendentes;
   if (countReservadas) countReservadas.textContent = data.countReservadas;
   if (countPagas) countPagas.textContent = data.countPagas;
   if (countAtrasadas) countAtrasadas.textContent = data.countAtrasadas;
@@ -1274,7 +1287,7 @@ function renderBillsView() {
 
   // Filtro por Status
   if (appState.activeFilter === 'a-pagar') {
-    filtered = filtered.filter(b => b.status === 'pending' || (b.nature === 'receita' && b.status !== 'paid'));
+    filtered = filtered.filter(b => b.status !== 'paid');
   } else if (appState.activeFilter === 'reservadas') {
     filtered = filtered.filter(b => b.status === 'reserved');
   } else if (appState.activeFilter === 'pagas') {

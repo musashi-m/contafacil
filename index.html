@@ -308,16 +308,16 @@
             </div>
           </div>
 
-          <!-- A Pagar Pendente (Em Aberto) -->
-          <div class="bg-surface-container-lowest rounded-xl p-2 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low">
+          <!-- A Pagar Pendente (Dívidas a Quitar) -->
+          <div class="bg-surface-container-lowest rounded-xl p-2 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low cursor-pointer hover:bg-surface-container transition-colors" onclick="setBillFilter('a-pagar'); switchTab('contas');" title="Ver contas a pagar">
             <div class="w-1 h-full absolute left-0 top-0 bg-on-tertiary-container"></div>
             <div class="flex items-center justify-between text-on-tertiary-container">
-              <span class="font-label-sm text-[9px] font-semibold">Em Aberto</span>
+              <span class="font-label-sm text-[9px] font-semibold">A Pagar</span>
               <span class="material-symbols-outlined text-[13px]">pending_actions</span>
             </div>
             <div class="mt-1">
               <span id="home-total-pagar-val" class="font-amount-metric text-[12px] text-on-tertiary-container block truncate font-semibold tabular-nums">R$ 0,00</span>
-              <span id="home-total-pagar-sub" class="font-body-sm text-[9px] text-on-surface-variant truncate block">0 pendentes</span>
+              <span id="home-total-pagar-sub" class="font-body-sm text-[9px] text-on-surface-variant truncate block">0 a pagar</span>
             </div>
           </div>
         </div>
@@ -448,7 +448,7 @@
           <div class="flex items-center gap-1 min-w-0 flex-1">
             <div class="w-1 h-5 rounded-full bg-on-tertiary-container shrink-0"></div>
             <div class="flex flex-col min-w-0">
-              <span class="font-label-sm text-[8px] text-on-surface-variant uppercase tracking-wider">Em Aberto</span>
+              <span class="font-label-sm text-[8px] text-on-surface-variant uppercase tracking-wider">A Pagar</span>
               <span id="bills-ribbon-restante" class="font-amount-metric text-[11px] text-on-tertiary-container truncate font-semibold tabular-nums">R$ 0,00</span>
             </div>
           </div>
@@ -469,7 +469,7 @@
                 <span id="count-tab-todas" class="px-1.5 py-0.2 rounded-full bg-surface-container-highest/20 font-label-sm text-[9px]">0</span>
               </button>
               <button onclick="setBillFilter('a-pagar')" class="filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="a-pagar">
-                <span>Em Aberto</span>
+                <span>A Pagar</span>
                 <span id="count-tab-a-pagar" class="px-1.5 py-0.2 rounded-full bg-surface-container font-label-sm text-[9px] text-on-surface-variant">0</span>
               </button>
               <button onclick="setBillFilter('reservadas')" class="filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-sky-700 dark:text-sky-300 font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="reservadas">

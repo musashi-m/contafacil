@@ -61,11 +61,17 @@ const appState = {
   currentDate: new Date(),
   currentYear: new Date().getFullYear(),
   currentMonth: new Date().getMonth() + 1, // 1-12
-  activeTab: 'inicio', // 'inicio', 'contas', 'planejamento'
+  activeTab: 'inicio', // 'inicio', 'contas', 'relatorios', 'planejamento'
   activeFilter: 'todas', // 'todas', 'a-pagar', 'pagas', 'atrasadas'
   natureFilter: 'todos', // 'todos', 'despesas', 'receitas'
   homeNatureFilter: 'todos', // 'todos', 'receitas', 'despesas'
   homeCategoryFilter: 'todas', // 'todas' ou id da categoria selecionada
+  reportPeriod: 'this_month', // 'this_month', 'last_30_days', 'last_3_months', 'last_6_months', 'this_year', 'custom'
+  reportCustomStart: '',
+  reportCustomEnd: '',
+  reportCategoryNature: 'despesas', // 'despesas' ou 'receitas'
+  reportTimeGrouping: 'auto', // 'auto', 'month', 'week', 'day'
+  reportTopRankingTab: 'despesas', // 'despesas' ou 'receitas'
   searchQuery: '',
   entryNature: 'despesa', // 'despesa' ou 'receita'
   selectedCategory: 'Moradia',
@@ -649,6 +655,7 @@ function switchTab(tabName) {
   if (subtitleEl) {
     if (tabName === 'inicio') subtitleEl.textContent = 'Início';
     else if (tabName === 'contas') subtitleEl.textContent = 'Lançamentos';
+    else if (tabName === 'relatorios') subtitleEl.textContent = 'Relatórios';
     else if (tabName === 'planejamento') subtitleEl.textContent = 'Planejamento';
   }
 
@@ -665,9 +672,9 @@ function switchTab(tabName) {
   document.querySelectorAll('.bottom-nav-item').forEach(btn => {
     const path = btn.getAttribute('data-path');
     if (path === tabName) {
-      btn.className = 'bottom-nav-item flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-1 transition-colors text-primary font-semibold';
+      btn.className = 'bottom-nav-item flex flex-col items-center justify-center min-w-[52px] min-h-[44px] py-1 transition-colors text-primary font-semibold';
     } else {
-      btn.className = 'bottom-nav-item flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors';
+      btn.className = 'bottom-nav-item flex flex-col items-center justify-center min-w-[52px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors';
     }
   });
 
@@ -679,6 +686,8 @@ function renderCurrentView() {
     renderHomeView();
   } else if (appState.activeTab === 'contas') {
     renderBillsView();
+  } else if (appState.activeTab === 'relatorios') {
+    renderReportsView();
   } else if (appState.activeTab === 'planejamento') {
     renderPlanningView();
   }
@@ -1249,7 +1258,689 @@ function setNatureFilter(filter) {
 }
 
 // ==========================================
-// TELA 3: PLANEJAMENTO & SALDOS
+// TELA 3: RELATÓRIOS & ANALYTICS CONSOLIDADO
+// ==========================================
+
+function setReportPeriod(period) {
+  appState.reportPeriod = period;
+
+  const customBox = document.getElementById('report-custom-dates-box');
+  if (customBox) {
+    if (period === 'custom') {
+      customBox.classList.remove('hidden');
+      const startInput = document.getElementById('report-custom-start');
+      const endInput = document.getElementById('report-custom-end');
+      if (startInput && !startInput.value) {
+        startInput.value = `${appState.currentYear}-${String(appState.currentMonth).padStart(2, '0')}-01`;
+      }
+      if (endInput && !endInput.value) {
+        const lastDay = new Date(appState.currentYear, appState.currentMonth, 0).getDate();
+        endInput.value = `${appState.currentYear}-${String(appState.currentMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      }
+    } else {
+      customBox.classList.add('hidden');
+    }
+  }
+
+  // Atualizar visual dos botões de período
+  document.querySelectorAll('.report-period-pill').forEach(btn => {
+    btn.className = 'report-period-pill px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-[11px] shrink-0 transition-all';
+  });
+
+  const activeBtn = document.getElementById(`report-period-${period}`);
+  if (activeBtn) {
+    activeBtn.className = 'report-period-pill px-3 py-1 rounded-full bg-primary text-on-primary font-label-md text-[11px] font-semibold shrink-0 shadow-sm transition-all';
+  }
+
+  renderReportsView();
+}
+
+function applyReportCustomDates() {
+  const startInput = document.getElementById('report-custom-start');
+  const endInput = document.getElementById('report-custom-end');
+
+  if (!startInput || !endInput || !startInput.value || !endInput.value) {
+    showToast('Por favor, informe as datas inicial e final.');
+    return;
+  }
+
+  if (startInput.value > endInput.value) {
+    showToast('A data inicial não pode ser posterior à data final.');
+    return;
+  }
+
+  appState.reportCustomStart = startInput.value;
+  appState.reportCustomEnd = endInput.value;
+  showToast('Filtro personalizado aplicado!');
+  renderReportsView();
+}
+
+function setReportCategoryNature(nature) {
+  appState.reportCategoryNature = nature;
+
+  const btnDespesas = document.getElementById('report-cat-toggle-despesas');
+  const btnReceitas = document.getElementById('report-cat-toggle-receitas');
+
+  if (nature === 'despesas') {
+    if (btnDespesas) btnDespesas.className = 'px-2 py-0.5 rounded-md bg-surface-container-lowest text-error font-label-sm text-[10px] font-semibold shadow-sm transition-all';
+    if (btnReceitas) btnReceitas.className = 'px-2 py-0.5 rounded-md text-on-surface-variant hover:text-on-surface font-label-sm text-[10px] transition-all';
+  } else {
+    if (btnDespesas) btnDespesas.className = 'px-2 py-0.5 rounded-md text-on-surface-variant hover:text-on-surface font-label-sm text-[10px] transition-all';
+    if (btnReceitas) btnReceitas.className = 'px-2 py-0.5 rounded-md bg-surface-container-lowest text-secondary font-label-sm text-[10px] font-semibold shadow-sm transition-all';
+  }
+
+  const data = getReportData();
+  renderReportCategories(data);
+}
+
+function setReportGrouping(grouping) {
+  appState.reportTimeGrouping = grouping;
+
+  ['month', 'week', 'day'].forEach(g => {
+    const btn = document.getElementById(`report-group-${g}`);
+    if (btn) {
+      if (g === grouping) {
+        btn.className = 'px-2 py-0.5 rounded-md bg-primary text-on-primary font-label-md text-[10px] font-semibold transition-all';
+      } else {
+        btn.className = 'px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-[10px] transition-all';
+      }
+    }
+  });
+
+  const data = getReportData();
+  renderReportTimeline(data);
+}
+
+function setReportTopRankingTab(tab) {
+  appState.reportTopRankingTab = tab;
+
+  const btnDespesas = document.getElementById('report-ranking-tab-despesas');
+  const btnReceitas = document.getElementById('report-ranking-tab-receitas');
+
+  if (tab === 'despesas') {
+    if (btnDespesas) btnDespesas.className = 'py-1 rounded-md bg-surface-container-lowest text-error font-label-sm text-[10px] font-semibold shadow-sm transition-all flex items-center justify-center gap-1';
+    if (btnReceitas) btnReceitas.className = 'py-1 rounded-md text-on-surface-variant hover:text-on-surface font-label-sm text-[10px] transition-all flex items-center justify-center gap-1';
+  } else {
+    if (btnDespesas) btnDespesas.className = 'py-1 rounded-md text-on-surface-variant hover:text-on-surface font-label-sm text-[10px] transition-all flex items-center justify-center gap-1';
+    if (btnReceitas) btnReceitas.className = 'py-1 rounded-md bg-surface-container-lowest text-secondary font-label-sm text-[10px] font-semibold shadow-sm transition-all flex items-center justify-center gap-1';
+  }
+
+  const data = getReportData();
+  renderReportRanking(data);
+}
+
+function getReportDateRange() {
+  const now = new Date();
+  let start = new Date();
+  let end = new Date();
+  let label = '';
+
+  const period = appState.reportPeriod || 'this_month';
+
+  if (period === 'this_month') {
+    start = new Date(appState.currentYear, appState.currentMonth - 1, 1);
+    end = new Date(appState.currentYear, appState.currentMonth, 0);
+    label = `${MONTH_NAMES[appState.currentMonth - 1]} de ${appState.currentYear}`;
+  } else if (period === 'last_30_days') {
+    start = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
+    end = new Date(now.getTime());
+    label = `Últimos 30 dias (${formatDateBR(start.toISOString().split('T')[0])} a ${formatDateBR(end.toISOString().split('T')[0])})`;
+  } else if (period === 'last_3_months') {
+    start = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    label = `Último Trimestre (${MONTH_SHORT[start.getMonth()]} a ${MONTH_SHORT[end.getMonth()]} ${end.getFullYear()})`;
+  } else if (period === 'last_6_months') {
+    start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    label = `Último Semestre (${MONTH_SHORT[start.getMonth()]} a ${MONTH_SHORT[end.getMonth()]} ${end.getFullYear()})`;
+  } else if (period === 'this_year') {
+    start = new Date(appState.currentYear, 0, 1);
+    end = new Date(appState.currentYear, 11, 31);
+    label = `Ano de ${appState.currentYear}`;
+  } else if (period === 'custom') {
+    if (appState.reportCustomStart && appState.reportCustomEnd) {
+      const [sY, sM, sD] = appState.reportCustomStart.split('-').map(Number);
+      const [eY, eM, eD] = appState.reportCustomEnd.split('-').map(Number);
+      start = new Date(sY, sM - 1, sD);
+      end = new Date(eY, eM - 1, eD);
+      label = `${formatDateBR(appState.reportCustomStart)} até ${formatDateBR(appState.reportCustomEnd)}`;
+    } else {
+      start = new Date(appState.currentYear, appState.currentMonth - 1, 1);
+      end = new Date(appState.currentYear, appState.currentMonth, 0);
+      label = `${MONTH_NAMES[appState.currentMonth - 1]} de ${appState.currentYear}`;
+    }
+  }
+
+  const formatYMD = (d) => {
+    const yr = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    return `${yr}-${mo}-${da}`;
+  };
+
+  const startStr = formatYMD(start);
+  const endStr = formatYMD(end);
+
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  const daysCount = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1);
+
+  return {
+    start,
+    end,
+    startStr,
+    endStr,
+    label,
+    daysCount
+  };
+}
+
+function getReportData() {
+  const range = getReportDateRange();
+  const allBills = getStoredBills();
+
+  const billsInRange = allBills.filter(bill => {
+    if (!bill.dueDate) return false;
+    return bill.dueDate >= range.startStr && bill.dueDate <= range.endStr;
+  });
+
+  let totalReceitas = 0;
+  let totalReceitasRecebidas = 0;
+  let totalReceitasPendentes = 0;
+  let countReceitas = 0;
+
+  let totalDespesas = 0;
+  let totalDespesasPagas = 0;
+  let totalDespesasPendentes = 0;
+  let countDespesas = 0;
+
+  let maxDespesa = null;
+  let maxReceita = null;
+
+  const categoryDespesas = {};
+  const categoryReceitas = {};
+
+  billsInRange.forEach(bill => {
+    const val = parseFloat(bill.amount) || 0;
+    const isReceita = bill.nature === 'receita';
+    const cat = bill.category || (isReceita ? 'Salário' : 'Moradia');
+
+    if (isReceita) {
+      totalReceitas += val;
+      countReceitas++;
+      if (bill.status === 'paid') totalReceitasRecebidas += val;
+      else totalReceitasPendentes += val;
+
+      if (!maxReceita || val > maxReceita.amount) {
+        maxReceita = { ...bill, amount: val };
+      }
+
+      if (!categoryReceitas[cat]) categoryReceitas[cat] = { total: 0, count: 0, bills: [] };
+      categoryReceitas[cat].total += val;
+      categoryReceitas[cat].count++;
+      categoryReceitas[cat].bills.push(bill);
+    } else {
+      totalDespesas += val;
+      countDespesas++;
+      if (bill.status === 'paid') totalDespesasPagas += val;
+      else totalDespesasPendentes += val;
+
+      if (!maxDespesa || val > maxDespesa.amount) {
+        maxDespesa = { ...bill, amount: val };
+      }
+
+      if (!categoryDespesas[cat]) categoryDespesas[cat] = { total: 0, count: 0, bills: [] };
+      categoryDespesas[cat].total += val;
+      categoryDespesas[cat].count++;
+      categoryDespesas[cat].bills.push(bill);
+    }
+  });
+
+  const saldoLiquido = totalReceitas - totalDespesas;
+  const taxaEconomia = totalReceitas > 0 ? ((saldoLiquido / totalReceitas) * 100) : 0;
+  const mediaDiariaDespesa = totalDespesas / range.daysCount;
+  const mediaPorDespesa = countDespesas > 0 ? (totalDespesas / countDespesas) : 0;
+  const mediaPorReceita = countReceitas > 0 ? (totalReceitas / countReceitas) : 0;
+
+  const sortedCatDespesas = Object.keys(categoryDespesas)
+    .map(catName => ({
+      category: catName,
+      total: categoryDespesas[catName].total,
+      count: categoryDespesas[catName].count,
+      pct: totalDespesas > 0 ? ((categoryDespesas[catName].total / totalDespesas) * 100) : 0,
+      bills: categoryDespesas[catName].bills
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  const sortedCatReceitas = Object.keys(categoryReceitas)
+    .map(catName => ({
+      category: catName,
+      total: categoryReceitas[catName].total,
+      count: categoryReceitas[catName].count,
+      pct: totalReceitas > 0 ? ((categoryReceitas[catName].total / totalReceitas) * 100) : 0,
+      bills: categoryReceitas[catName].bills
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  const topCategoryDespesa = sortedCatDespesas.length > 0 ? sortedCatDespesas[0] : null;
+  const topCategoryReceita = sortedCatReceitas.length > 0 ? sortedCatReceitas[0] : null;
+
+  const top5Despesas = billsInRange
+    .filter(b => b.nature !== 'receita')
+    .sort((a, b) => (parseFloat(b.amount) || 0) - (parseFloat(a.amount) || 0))
+    .slice(0, 5);
+
+  const top5Receitas = billsInRange
+    .filter(b => b.nature === 'receita')
+    .sort((a, b) => (parseFloat(b.amount) || 0) - (parseFloat(a.amount) || 0))
+    .slice(0, 5);
+
+  const totalMovimentado = totalReceitas + totalDespesas;
+  const totalPagoRecebido = totalReceitasRecebidas + totalDespesasPagas;
+  const liquidationPct = totalMovimentado > 0 ? Math.round((totalPagoRecebido / totalMovimentado) * 100) : 0;
+
+  return {
+    ...range,
+    billsInRange,
+    totalReceitas,
+    totalReceitasRecebidas,
+    totalReceitasPendentes,
+    countReceitas,
+    totalDespesas,
+    totalDespesasPagas,
+    totalDespesasPendentes,
+    countDespesas,
+    saldoLiquido,
+    taxaEconomia,
+    mediaDiariaDespesa,
+    mediaPorDespesa,
+    mediaPorReceita,
+    maxDespesa,
+    maxReceita,
+    sortedCatDespesas,
+    sortedCatReceitas,
+    topCategoryDespesa,
+    topCategoryReceita,
+    top5Despesas,
+    top5Receitas,
+    liquidationPct
+  };
+}
+
+function renderReportsView() {
+  const data = getReportData();
+
+  // 1. Labels de Período
+  const intervalLabel = document.getElementById('report-interval-label');
+  const daysCountBadge = document.getElementById('report-days-count-badge');
+  if (intervalLabel) intervalLabel.textContent = data.label;
+  if (daysCountBadge) daysCountBadge.textContent = `${data.daysCount} ${data.daysCount === 1 ? 'dia' : 'dias'}`;
+
+  // 2. Hero Card: Saldo Líquido & Taxa de Retenção
+  const netBalanceEl = document.getElementById('report-hero-net-balance');
+  const heroBadgeEl = document.getElementById('report-hero-status-badge');
+  const heroSubtitleEl = document.getElementById('report-hero-subtitle');
+  const savingsRateEl = document.getElementById('report-savings-rate');
+  const savingsBarEl = document.getElementById('report-savings-bar');
+
+  if (netBalanceEl) {
+    const sign = data.saldoLiquido >= 0 ? '+' : '';
+    netBalanceEl.textContent = `${sign} ${formatCurrency(data.saldoLiquido)}`;
+    if (data.saldoLiquido >= 0) {
+      netBalanceEl.className = 'font-display-currency-mobile text-[28px] text-white dark:text-on-surface tracking-tight tabular-nums font-bold';
+    } else {
+      netBalanceEl.className = 'font-display-currency-mobile text-[28px] text-rose-300 dark:text-error tracking-tight tabular-nums font-bold';
+    }
+  }
+
+  if (heroBadgeEl) {
+    if (data.saldoLiquido > 0) {
+      heroBadgeEl.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary/30 text-secondary-fixed dark:text-emerald-300 font-label-sm text-[11px] font-semibold';
+      heroBadgeEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed animate-pulse"></span> Superávit';
+    } else if (data.saldoLiquido === 0) {
+      heroBadgeEl.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container font-label-sm text-[11px] font-semibold text-on-surface-variant';
+      heroBadgeEl.textContent = 'Equilibrado';
+    } else {
+      heroBadgeEl.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container dark:bg-red-950/80 dark:text-red-300 font-label-sm text-[11px] font-semibold';
+      heroBadgeEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span> Déficit no Período';
+    }
+  }
+
+  if (heroSubtitleEl) {
+    heroSubtitleEl.textContent = `${formatCurrency(data.totalReceitas)} em entradas (-) ${formatCurrency(data.totalDespesas)} em saídas`;
+  }
+
+  if (savingsRateEl) {
+    if (data.totalReceitas > 0) {
+      savingsRateEl.textContent = `${Math.max(0, data.taxaEconomia).toFixed(1)}% guardado`;
+    } else {
+      savingsRateEl.textContent = '0% retido';
+    }
+  }
+
+  if (savingsBarEl) {
+    const clampedPct = Math.max(0, Math.min(100, data.taxaEconomia));
+    savingsBarEl.style.width = `${clampedPct}%`;
+  }
+
+  // 3. Grid de 4 Cards
+  const totalReceitasEl = document.getElementById('report-total-receitas');
+  const countReceitasEl = document.getElementById('report-count-receitas');
+  const avgReceitasEl = document.getElementById('report-avg-receitas');
+  if (totalReceitasEl) totalReceitasEl.textContent = formatCurrency(data.totalReceitas);
+  if (countReceitasEl) countReceitasEl.textContent = `${data.countReceitas} ${data.countReceitas === 1 ? 'entrada' : 'entradas'}`;
+  if (avgReceitasEl) avgReceitasEl.textContent = `Média: ${formatCurrency(data.mediaPorReceita)}`;
+
+  const totalDespesasEl = document.getElementById('report-total-despesas');
+  const countDespesasEl = document.getElementById('report-count-despesas');
+  const avgDespesasEl = document.getElementById('report-avg-despesas');
+  if (totalDespesasEl) totalDespesasEl.textContent = formatCurrency(data.totalDespesas);
+  if (countDespesasEl) countDespesasEl.textContent = `${data.countDespesas} ${data.countDespesas === 1 ? 'saída' : 'saídas'}`;
+  if (avgDespesasEl) avgDespesasEl.textContent = `Média: ${formatCurrency(data.mediaPorDespesa)}`;
+
+  const dailyBurnEl = document.getElementById('report-daily-burn');
+  const dailyBurnSubEl = document.getElementById('report-daily-burn-sub');
+  if (dailyBurnEl) dailyBurnEl.textContent = `${formatCurrency(data.mediaDiariaDespesa)} / dia`;
+  if (dailyBurnSubEl) dailyBurnSubEl.textContent = `Em ${data.daysCount} ${data.daysCount === 1 ? 'dia' : 'dias'}`;
+
+  const maxDespesaValEl = document.getElementById('report-max-despesa-val');
+  const maxDespesaNameEl = document.getElementById('report-max-despesa-name');
+  if (maxDespesaValEl) {
+    maxDespesaValEl.textContent = data.maxDespesa ? formatCurrency(data.maxDespesa.amount) : 'R$ 0,00';
+  }
+  if (maxDespesaNameEl) {
+    if (data.maxDespesa) {
+      maxDespesaNameEl.textContent = `${data.maxDespesa.name} (${formatDateBR(data.maxDespesa.dueDate)})`;
+    } else {
+      maxDespesaNameEl.textContent = 'Nenhuma despesa';
+    }
+  }
+
+  // 4. Banner Categoria Campeã de Gastos
+  const topCatName = document.getElementById('report-top-cat-name');
+  const topCatDesc = document.getElementById('report-top-cat-desc');
+  const topCatVal = document.getElementById('report-top-cat-val');
+  const topCatPct = document.getElementById('report-top-cat-pct-badge');
+  const topCatIcon = document.getElementById('report-top-cat-icon');
+  const topCatIconWrap = document.getElementById('report-top-cat-icon-wrap');
+
+  if (data.topCategoryDespesa) {
+    const catInfo = getCategoryInfo(data.topCategoryDespesa.category, 'despesa');
+    if (topCatName) topCatName.textContent = data.topCategoryDespesa.category;
+    if (topCatDesc) topCatDesc.textContent = `Representa ${data.topCategoryDespesa.pct.toFixed(1)}% de todas as despesas do período`;
+    if (topCatVal) topCatVal.textContent = formatCurrency(data.topCategoryDespesa.total);
+    if (topCatPct) topCatPct.textContent = `${data.topCategoryDespesa.pct.toFixed(1)}% do total`;
+    if (topCatIcon) topCatIcon.textContent = catInfo.icon || 'category';
+    if (topCatIconWrap) topCatIconWrap.className = `w-10 h-10 rounded-xl ${catInfo.bg} flex items-center justify-center shrink-0 shadow-sm`;
+  } else {
+    if (topCatName) topCatName.textContent = 'Sem dados';
+    if (topCatDesc) topCatDesc.textContent = 'Nenhum gasto registrado neste período.';
+    if (topCatVal) topCatVal.textContent = 'R$ 0,00';
+    if (topCatPct) topCatPct.textContent = '0%';
+  }
+
+  // 5. Status de Liquidação
+  const liquidPct = document.getElementById('report-liquidation-pct');
+  const liquidPaidVal = document.getElementById('report-liquid-paid-val');
+  const liquidPaidCount = document.getElementById('report-liquid-paid-count');
+  const liquidPendingVal = document.getElementById('report-liquid-pending-val');
+  const liquidPendingCount = document.getElementById('report-liquid-pending-count');
+
+  const countPagasRecebidas = data.billsInRange.filter(b => b.status === 'paid').length;
+  const countPendentes = data.billsInRange.length - countPagasRecebidas;
+  const totalPagoVal = data.totalDespesasPagas + data.totalReceitasRecebidas;
+  const totalPendenteVal = data.totalDespesasPendentes + data.totalReceitasPendentes;
+
+  if (liquidPct) liquidPct.textContent = `${data.liquidationPct}% liquidado`;
+  if (liquidPaidVal) liquidPaidVal.textContent = formatCurrency(totalPagoVal);
+  if (liquidPaidCount) liquidPaidCount.textContent = `${countPagasRecebidas} concluídas`;
+  if (liquidPendingVal) liquidPendingVal.textContent = formatCurrency(totalPendenteVal);
+  if (liquidPendingCount) liquidPendingCount.textContent = `${countPendentes} em aberto`;
+
+  // 6. Renderizar Seções Dinâmicas
+  renderReportCategories(data);
+  renderReportTimeline(data);
+  renderReportRanking(data);
+}
+
+function renderReportCategories(data) {
+  const container = document.getElementById('report-categories-list');
+  if (!container) return;
+
+  const isReceita = (appState.reportCategoryNature === 'receitas');
+  const list = isReceita ? data.sortedCatReceitas : data.sortedCatDespesas;
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="py-6 text-center text-on-surface-variant flex flex-col items-center justify-center gap-1.5">
+        <span class="material-symbols-outlined text-[24px] opacity-60">pie_chart</span>
+        <span class="font-body-sm text-[12px]">Nenhuma movimentação de ${isReceita ? 'receita' : 'despesa'} no período.</span>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = list.map(item => {
+    const cat = getCategoryInfo(item.category, isReceita ? 'receita' : 'despesa');
+    const barBg = isReceita ? 'bg-secondary' : 'bg-error';
+    const amountColor = isReceita ? 'text-secondary' : 'text-on-surface';
+
+    return `
+      <div class="p-2.5 rounded-xl bg-surface-container-low border border-surface-container flex flex-col gap-1.5 transition-all hover:bg-surface-container">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-8 h-8 rounded-lg ${cat.bg} flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-[16px]">${cat.icon}</span>
+            </div>
+            <div class="flex flex-col min-w-0">
+              <span class="font-headline-sm text-[13px] text-on-surface font-semibold truncate">${escapeHtml(item.category)}</span>
+              <span class="font-body-sm text-[10px] text-on-surface-variant">${item.count} ${item.count === 1 ? 'lançamento' : 'lançamentos'}</span>
+            </div>
+          </div>
+          <div class="flex flex-col items-end shrink-0">
+            <span class="font-amount-metric text-[13px] ${amountColor} font-bold tabular-nums">${formatCurrency(item.total)}</span>
+            <span class="font-label-sm text-[10px] text-on-surface-variant font-semibold">${item.pct.toFixed(1)}% do total</span>
+          </div>
+        </div>
+        <!-- Barra de Percentual Proporcional -->
+        <div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+          <div class="${barBg} h-full rounded-full transition-all duration-500" style="width: ${Math.max(3, item.pct)}%;"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderReportTimeline(data) {
+  const container = document.getElementById('report-timeline-container');
+  if (!container) return;
+
+  let grouping = appState.reportTimeGrouping || 'auto';
+  if (grouping === 'auto') {
+    if (data.daysCount <= 31) grouping = 'day';
+    else if (data.daysCount <= 90) grouping = 'week';
+    else grouping = 'month';
+  }
+
+  // Criar baldes temporais
+  const buckets = {};
+
+  data.billsInRange.forEach(bill => {
+    if (!bill.dueDate) return;
+    const val = parseFloat(bill.amount) || 0;
+    const isReceita = bill.nature === 'receita';
+
+    let bucketKey = '';
+    let bucketLabel = '';
+
+    if (grouping === 'month') {
+      bucketKey = bill.dueDate.substring(0, 7); // YYYY-MM
+      const [y, m] = bucketKey.split('-').map(Number);
+      bucketLabel = `${MONTH_SHORT[m - 1]} ${y}`;
+    } else if (grouping === 'week') {
+      const [y, m, d] = bill.dueDate.split('-').map(Number);
+      const weekNumber = Math.ceil(d / 7);
+      bucketKey = `${y}-${String(m).padStart(2, '0')}-W${weekNumber}`;
+      bucketLabel = `Semana ${weekNumber} (${MONTH_SHORT[m - 1]})`;
+    } else {
+      // Por dia
+      bucketKey = bill.dueDate; // YYYY-MM-DD
+      const [y, m, d] = bucketKey.split('-').map(Number);
+      bucketLabel = `${d} ${MONTH_SHORT[m - 1]}`;
+    }
+
+    if (!buckets[bucketKey]) {
+      buckets[bucketKey] = {
+        key: bucketKey,
+        label: bucketLabel,
+        receitas: 0,
+        despesas: 0,
+        count: 0
+      };
+    }
+
+    if (isReceita) {
+      buckets[bucketKey].receitas += val;
+    } else {
+      buckets[bucketKey].despesas += val;
+    }
+    buckets[bucketKey].count++;
+  });
+
+  const sortedKeys = Object.keys(buckets).sort();
+
+  if (sortedKeys.length === 0) {
+    container.innerHTML = `
+      <div class="py-6 text-center text-on-surface-variant flex flex-col items-center justify-center gap-1.5">
+        <span class="material-symbols-outlined text-[24px] opacity-60">calendar_view_week</span>
+        <span class="font-body-sm text-[12px]">Sem dados para compor a linha do tempo neste intervalo.</span>
+      </div>
+    `;
+    return;
+  }
+
+  let maxValInBuckets = 0;
+  sortedKeys.forEach(k => {
+    const b = buckets[k];
+    if (b.receitas > maxValInBuckets) maxValInBuckets = b.receitas;
+    if (b.despesas > maxValInBuckets) maxValInBuckets = b.despesas;
+  });
+  if (maxValInBuckets === 0) maxValInBuckets = 1;
+
+  container.innerHTML = sortedKeys.map(k => {
+    const b = buckets[k];
+    const saldo = b.receitas - b.despesas;
+    const saldoSign = saldo >= 0 ? '+' : '';
+    const saldoClass = saldo >= 0 ? 'text-secondary' : 'text-error';
+
+    const receitaBarPct = Math.max(0, Math.min(100, (b.receitas / maxValInBuckets) * 100));
+    const despesaBarPct = Math.max(0, Math.min(100, (b.despesas / maxValInBuckets) * 100));
+
+    return `
+      <div class="p-2.5 rounded-xl bg-surface-container-low border border-surface-container flex flex-col gap-2">
+        <div class="flex items-center justify-between text-[11px]">
+          <span class="font-headline-sm text-[12px] font-semibold text-on-surface">${escapeHtml(b.label)}</span>
+          <span class="font-label-sm text-[11px] font-bold ${saldoClass} tabular-nums">Saldo: ${saldoSign}${formatCurrency(saldo)}</span>
+        </div>
+
+        <!-- Barras Comparativas Lado a Lado -->
+        <div class="space-y-1">
+          <!-- Receitas Bar -->
+          <div class="flex items-center gap-2 text-[10px]">
+            <span class="w-12 text-on-surface-variant shrink-0 font-medium">Entradas:</span>
+            <div class="flex-1 h-2 bg-surface-container-highest rounded-full overflow-hidden">
+              <div class="bg-secondary h-full rounded-full transition-all duration-500" style="width: ${receitaBarPct}%;"></div>
+            </div>
+            <span class="w-16 text-right font-semibold text-secondary tabular-nums shrink-0">${formatCurrency(b.receitas)}</span>
+          </div>
+
+          <!-- Despesas Bar -->
+          <div class="flex items-center gap-2 text-[10px]">
+            <span class="w-12 text-on-surface-variant shrink-0 font-medium">Saídas:</span>
+            <div class="flex-1 h-2 bg-surface-container-highest rounded-full overflow-hidden">
+              <div class="bg-error h-full rounded-full transition-all duration-500" style="width: ${despesaBarPct}%;"></div>
+            </div>
+            <span class="w-16 text-right font-semibold text-on-surface tabular-nums shrink-0">${formatCurrency(b.despesas)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderReportRanking(data) {
+  const container = document.getElementById('report-ranking-list');
+  if (!container) return;
+
+  const isDespesa = (appState.reportTopRankingTab === 'despesas');
+  const items = isDespesa ? data.top5Despesas : data.top5Receitas;
+
+  if (items.length === 0) {
+    container.innerHTML = `
+      <div class="py-4 text-center text-on-surface-variant font-body-sm text-[11px]">
+        Nenhuma ${isDespesa ? 'despesa' : 'receita'} encontrada no período.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = items.map((bill, index) => {
+    const isReceita = bill.nature === 'receita';
+    const cat = getCategoryInfo(bill.category, bill.nature);
+    const amountColor = isReceita ? 'text-secondary' : 'text-on-surface';
+    const amountSign = isReceita ? '+' : '-';
+    const rankColors = ['bg-amber-400 text-slate-900', 'bg-slate-300 text-slate-800', 'bg-amber-700 text-white', 'bg-surface-container text-on-surface-variant', 'bg-surface-container text-on-surface-variant'];
+
+    return `
+      <div class="p-2 rounded-xl bg-surface-container-low border border-surface-container flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-5 h-5 rounded-full ${rankColors[index] || 'bg-surface-container'} flex items-center justify-center font-label-sm text-[10px] font-bold shrink-0">
+            ${index + 1}
+          </span>
+          <div class="w-7 h-7 rounded-lg ${cat.bg} flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[14px]">${cat.icon}</span>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span class="font-body-md text-[12px] font-semibold text-on-surface truncate">${escapeHtml(bill.name)}</span>
+            <span class="font-body-sm text-[10px] text-on-surface-variant">${formatDateBR(bill.dueDate)} • ${escapeHtml(bill.category || (isReceita ? 'Entradas' : 'Moradia'))}</span>
+          </div>
+        </div>
+        <span class="font-amount-metric text-[13px] ${amountColor} font-bold tabular-nums shrink-0">
+          ${amountSign} ${formatCurrency(bill.amount)}
+        </span>
+      </div>
+    `;
+  }).join('');
+}
+
+function copyFinancialReportSummary() {
+  const data = getReportData();
+  const sign = data.saldoLiquido >= 0 ? '+' : '';
+
+  const summaryText = `📊 *ContaFácil - Relatório Financeiro Consolidado*
+🗓️ *Período:* ${data.label} (${data.daysCount} dias)
+
+💰 *Entradas (Receitas):* ${formatCurrency(data.totalReceitas)} (${data.countReceitas} itens)
+💸 *Saídas (Despesas):* ${formatCurrency(data.totalDespesas)} (${data.countDespesas} itens)
+⚖️ *Saldo Líquido:* ${sign}${formatCurrency(data.saldoLiquido)}
+📈 *Taxa de Poupança:* ${data.taxaEconomia.toFixed(1)}%
+
+🔥 *Média Diária de Gastos:* ${formatCurrency(data.mediaDiariaDespesa)}/dia
+🏆 *Maior Despesa:* ${data.maxDespesa ? `${data.maxDespesa.name} (${formatCurrency(data.maxDespesa.amount)})` : 'Nenhuma'}
+🏷️ *Maior Centro de Custo:* ${data.topCategoryDespesa ? `${data.topCategoryDespesa.category} (${formatCurrency(data.topCategoryDespesa.total)} - ${data.topCategoryDespesa.pct.toFixed(1)}%)` : 'Nenhum'}
+
+✅ *Status de Liquidação:* ${data.liquidationPct}% concluído`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(summaryText)
+      .then(() => showToast('Resumo do relatório copiado!'))
+      .catch(() => showToast('Erro ao copiar relatório.'));
+  } else {
+    showToast('Área de transferência não suportada neste navegador.');
+  }
+}
+
+// ==========================================
+// TELA 4: PLANEJAMENTO & SALDOS
 // ==========================================
 
 function renderPlanningView() {

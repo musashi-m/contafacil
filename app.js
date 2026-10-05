@@ -1,7 +1,8 @@
 /**
  * ContaFácil - Lógica Principal do Aplicativo
- * Gestão de Contas a Pagar, Projeção Contínua de Saldos e Planejamento Financeiro
+ * Gestão de Contas a Pagar & Receber, Projeção Contínua de Saldos e Planejamento Financeiro
  * Conectado ao Supabase (PostgreSQL em Tempo Real)
+ * Suporte a Entradas (Receitas) e Saídas (Despesas)
  * Suporte a Tema Claro & Tema Escuro (Google Stitch)
  */
 
@@ -21,8 +22,8 @@ const STORAGE_KEYS = {
   THEME: 'contafacil_theme'
 };
 
-// Categorias suportadas com ícones Material Symbols e cores semânticas (Compatíveis com Modo Claro & Escuro)
-const CATEGORIES = [
+// Categorias de Despesas (Saídas)
+const EXPENSE_CATEGORIES = [
   { id: 'Moradia', label: 'Moradia', icon: 'home', bg: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' },
   { id: 'Alimentação', label: 'Alimentação', icon: 'restaurant', bg: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' },
   { id: 'Saúde', label: 'Saúde', icon: 'medical_services', bg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' },
@@ -32,6 +33,18 @@ const CATEGORIES = [
   { id: 'Serviços', label: 'Serviços', icon: 'bolt', bg: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/60 dark:text-yellow-300' },
   { id: 'Outros', label: 'Outros', icon: 'category', bg: 'bg-surface-container text-on-surface-variant dark:bg-surface-container-high dark:text-on-surface' }
 ];
+
+// Categorias de Receitas (Entradas)
+const INCOME_CATEGORIES = [
+  { id: 'Salário', label: 'Salário', icon: 'payments', bg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' },
+  { id: 'Freelance', label: 'Freelance', icon: 'work', bg: 'bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300' },
+  { id: 'Investimentos', label: 'Rendimentos', icon: 'trending_up', bg: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300' },
+  { id: 'Vendas', label: 'Vendas', icon: 'storefront', bg: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' },
+  { id: 'Benefícios', label: 'Benefícios', icon: 'card_giftcard', bg: 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' },
+  { id: 'Outras Entradas', label: 'Outras', icon: 'savings', bg: 'bg-surface-container text-on-surface-variant dark:bg-surface-container-high dark:text-on-surface' }
+];
+
+const CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
 
 const MONTH_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -50,7 +63,9 @@ const appState = {
   currentMonth: new Date().getMonth() + 1, // 1-12
   activeTab: 'inicio', // 'inicio', 'contas', 'planejamento'
   activeFilter: 'todas', // 'todas', 'a-pagar', 'pagas', 'atrasadas'
+  natureFilter: 'todos', // 'todos', 'despesas', 'receitas'
   searchQuery: '',
+  entryNature: 'despesa', // 'despesa' ou 'receita'
   selectedCategory: 'Moradia',
   billType: 'parcelada', // 'parcelada' ou 'fixa'
   editingBillId: null,
@@ -102,12 +117,14 @@ function saveStoredBalances(balances) {
 }
 
 function mapSupabaseBillToApp(row) {
+  const isIncome = row.nature === 'income' || row.nature === 'receita';
   return {
     id: String(row.id),
     name: row.name || 'Sem nome',
     amount: parseFloat(row.amount) || 0,
     dueDate: row.due_date ? String(row.due_date).substring(0, 10) : '',
-    category: row.category || 'Moradia',
+    category: row.category || (isIncome ? 'Salário' : 'Moradia'),
+    nature: isIncome ? 'receita' : 'despesa',
     type: row.type || 'parcelada',
     currentInstallment: parseInt(row.current_installment, 10) || 1,
     totalInstallments: parseInt(row.total_installments, 10) || 1,
@@ -124,7 +141,8 @@ function mapAppBillToSupabase(bill) {
     name: bill.name,
     amount: parseFloat(bill.amount) || 0,
     due_date: bill.dueDate,
-    category: bill.category || 'Moradia',
+    category: bill.category || (bill.nature === 'receita' ? 'Salário' : 'Moradia'),
+    nature: bill.nature || 'despesa',
     type: bill.type || 'parcelada',
     current_installment: parseInt(bill.currentInstallment, 10) || 1,
     total_installments: parseInt(bill.totalInstallments, 10) || 1,
@@ -181,7 +199,7 @@ async function loadDataFromSupabase(showToastFeedback = false) {
   try {
     updateSupabaseSyncStatus('syncing');
 
-    // 1. Buscar Contas (bills)
+    // 1. Buscar Lançamentos (bills)
     const { data: billsData, error: billsError } = await supabaseClient
       .from('bills')
       .select('*')
@@ -297,15 +315,18 @@ function parseDateBR(dateBR) {
   return dateBR;
 }
 
-function getCategoryInfo(categoryId) {
-  return CATEGORIES.find(c => c.id === categoryId) || CATEGORIES[CATEGORIES.length - 1];
+function getCategoryInfo(categoryId, nature = 'despesa') {
+  const match = CATEGORIES.find(c => c.id === categoryId);
+  if (match) return match;
+  return nature === 'receita' ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0];
 }
 
 // Retorna informação amigável de status e prazo relativo
-function getBillDueInfo(dueDateStr, status) {
+function getBillDueInfo(dueDateStr, status, nature = 'despesa') {
+  const isReceita = nature === 'receita';
   if (status === 'paid') {
     return {
-      text: 'Quitada',
+      text: isReceita ? 'Recebida' : 'Quitada',
       badgeClass: 'bg-secondary-container/60 text-on-secondary-container dark:bg-emerald-950/60 dark:text-emerald-300 font-medium',
       isOverdue: false,
       isDueToday: false
@@ -335,20 +356,24 @@ function getBillDueInfo(dueDateStr, status) {
     const daysAgo = Math.abs(diffDays);
     return {
       text: daysAgo === 1 ? 'Atrasada (ontem)' : `Atrasada (${daysAgo} dias)`,
-      badgeClass: 'bg-error-container text-on-error-container dark:bg-red-950/70 dark:text-red-300 font-semibold',
+      badgeClass: isReceita 
+        ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-300 font-semibold' 
+        : 'bg-error-container text-on-error-container dark:bg-red-950/70 dark:text-red-300 font-semibold',
       isOverdue: true,
       isDueToday: false
     };
   } else if (diffDays === 0) {
     return {
-      text: 'Vence Hoje',
-      badgeClass: 'bg-error-container text-on-error-container dark:bg-red-950/70 dark:text-red-300 font-semibold animate-pulse',
+      text: isReceita ? 'Recebe Hoje' : 'Vence Hoje',
+      badgeClass: isReceita 
+        ? 'bg-secondary-container text-on-secondary-container dark:bg-emerald-950/80 dark:text-emerald-300 font-semibold animate-pulse' 
+        : 'bg-error-container text-on-error-container dark:bg-red-950/70 dark:text-red-300 font-semibold animate-pulse',
       isOverdue: false,
       isDueToday: true
     };
   } else if (diffDays === 1) {
     return {
-      text: 'Vence Amanhã',
+      text: isReceita ? 'Recebe Amanhã' : 'Vence Amanhã',
       badgeClass: 'bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-300 font-medium',
       isOverdue: false,
       isDueToday: false
@@ -404,7 +429,7 @@ function updateThemeIcon(isDark) {
 
 // ==========================================
 // Projeção Contínua e Automática de Saldos
-// (O saldo final de um mês reflete no próximo)
+// (Saldo Final = Saldo Inicial + Receitas - Despesas)
 // ==========================================
 
 function getEffectiveInitialBalance(year, month) {
@@ -441,7 +466,7 @@ function getEffectiveInitialBalance(year, month) {
   let runningBalance = parseFloat(balances[anchorKey]) || 0;
   let lastProcessedKey = anchorKey;
 
-  // Percorre mês a mês acumulando saídas para projetar o saldo final
+  // Percorre mês a mês acumulando entradas e saídas para projetar o saldo final
   while (getYearMonthKey(curY, curM) < targetKey) {
     const curKey = getYearMonthKey(curY, curM);
 
@@ -450,12 +475,13 @@ function getEffectiveInitialBalance(year, month) {
       runningBalance = parseFloat(balances[curKey]) || 0;
     }
 
-    // Calcula o total de contas previstas deste mês
+    // Calcula o total de receitas e despesas previstas deste mês
     const monthBills = allBills.filter(b => b.dueDate && b.dueDate.startsWith(curKey));
-    const totalDespesas = monthBills.reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
+    const monthReceitas = monthBills.filter(b => b.nature === 'receita').reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
+    const monthDespesas = monthBills.filter(b => b.nature !== 'receita').reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
 
     // Saldo projetado ao fim do mês
-    runningBalance = runningBalance - totalDespesas;
+    runningBalance = runningBalance + monthReceitas - monthDespesas;
     lastProcessedKey = curKey;
 
     // Avança 1 mês
@@ -481,7 +507,7 @@ function getMonthFinancialData(year, month) {
   const ymKey = getYearMonthKey(year, month);
   const allBills = getStoredBills();
 
-  // Filtrar contas que vencem neste ano/mês
+  // Filtrar lançamentos que vencem neste ano/mês
   const monthBills = allBills.filter(bill => {
     return bill.dueDate && bill.dueDate.startsWith(ymKey);
   });
@@ -492,9 +518,16 @@ function getMonthFinancialData(year, month) {
   const isManualBalance = balanceInfo.isManual;
   const sourceMonth = balanceInfo.sourceMonth;
 
-  let totalPrevisto = 0;
-  let totalPago = 0;
-  let totalPendente = 0;
+  let totalReceitasPrevistas = 0;
+  let totalReceitasRecebidas = 0;
+  let totalReceitasPendentes = 0;
+  let countReceitas = 0;
+
+  let totalDespesasPrevistas = 0;
+  let totalDespesasPagas = 0;
+  let totalDespesasPendentes = 0;
+  let countDespesas = 0;
+
   let countPagas = 0;
   let countPendentes = 0;
   let countAtrasadas = 0;
@@ -503,23 +536,44 @@ function getMonthFinancialData(year, month) {
 
   monthBills.forEach(bill => {
     const val = parseFloat(bill.amount) || 0;
-    totalPrevisto += val;
+    const isReceita = bill.nature === 'receita';
 
-    if (bill.status === 'paid') {
-      totalPago += val;
-      countPagas++;
+    if (isReceita) {
+      totalReceitasPrevistas += val;
+      countReceitas++;
+      if (bill.status === 'paid') {
+        totalReceitasRecebidas += val;
+        countPagas++;
+      } else {
+        totalReceitasPendentes += val;
+        countPendentes++;
+        if (bill.dueDate < todayStr) {
+          countAtrasadas++;
+        }
+      }
     } else {
-      totalPendente += val;
-      countPendentes++;
-      if (bill.dueDate < todayStr) {
-        countAtrasadas++;
+      totalDespesasPrevistas += val;
+      countDespesas++;
+      if (bill.status === 'paid') {
+        totalDespesasPagas += val;
+        countPagas++;
+      } else {
+        totalDespesasPendentes += val;
+        countPendentes++;
+        if (bill.dueDate < todayStr) {
+          countAtrasadas++;
+        }
       }
     }
   });
 
-  const saldoAtualReal = initialBalance - totalPago;
-  const saldoProjetadoFinal = initialBalance - totalPrevisto;
-  const pctExecucao = totalPrevisto > 0 ? Math.min(100, Math.round((totalPago / totalPrevisto) * 100)) : 0;
+  const saldoAtualReal = initialBalance + totalReceitasRecebidas - totalDespesasPagas;
+  const saldoProjetadoFinal = initialBalance + totalReceitasPrevistas - totalDespesasPrevistas;
+  const resultadoMes = totalReceitasPrevistas - totalDespesasPrevistas;
+
+  const pctExecucao = totalDespesasPrevistas > 0 
+    ? Math.min(100, Math.round((totalDespesasPagas / totalDespesasPrevistas) * 100)) 
+    : (totalDespesasPagas > 0 ? 100 : 0);
 
   return {
     year,
@@ -529,15 +583,24 @@ function getMonthFinancialData(year, month) {
     initialBalance,
     isManualBalance,
     sourceMonth,
-    totalPrevisto,
-    totalPago,
-    totalPendente,
+    totalReceitasPrevistas,
+    totalReceitasRecebidas,
+    totalReceitasPendentes,
+    countReceitas,
+    totalDespesasPrevistas,
+    totalDespesasPagas,
+    totalDespesasPendentes,
+    countDespesas,
+    totalPrevisto: totalDespesasPrevistas,
+    totalPago: totalDespesasPagas,
+    totalPendente: totalDespesasPendentes,
     countTotal: monthBills.length,
     countPagas,
     countPendentes,
     countAtrasadas,
     saldoAtualReal,
     saldoProjetadoFinal,
+    resultadoMes,
     pctExecucao
   };
 }
@@ -583,7 +646,7 @@ function switchTab(tabName) {
   const subtitleEl = document.getElementById('header-tab-subtitle');
   if (subtitleEl) {
     if (tabName === 'inicio') subtitleEl.textContent = 'Início';
-    else if (tabName === 'contas') subtitleEl.textContent = 'Contas';
+    else if (tabName === 'contas') subtitleEl.textContent = 'Lançamentos';
     else if (tabName === 'planejamento') subtitleEl.textContent = 'Planejamento';
   }
 
@@ -664,21 +727,21 @@ function renderHomeView() {
   if (initialBalanceEl) initialBalanceEl.textContent = formatCurrency(data.initialBalance);
   if (realBalanceEl) realBalanceEl.textContent = formatCurrency(data.saldoAtualReal);
 
-  // Grid de 3 Colunas
-  const totalGeralVal = document.getElementById('home-total-geral-val');
-  const totalGeralSub = document.getElementById('home-total-geral-sub');
-  const totalPagoVal = document.getElementById('home-total-pago-val');
-  const totalPagoSub = document.getElementById('home-total-pago-sub');
+  // Grid de 3 Colunas (Receitas (+), Despesas (-), A Pagar)
+  const totalReceitasVal = document.getElementById('home-total-receitas-val');
+  const totalReceitasSub = document.getElementById('home-total-receitas-sub');
+  const totalDespesasVal = document.getElementById('home-total-despesas-val');
+  const totalDespesasSub = document.getElementById('home-total-despesas-sub');
   const totalPagarVal = document.getElementById('home-total-pagar-val');
   const totalPagarSub = document.getElementById('home-total-pagar-sub');
 
-  if (totalGeralVal) totalGeralVal.textContent = formatCurrency(data.totalPrevisto);
-  if (totalGeralSub) totalGeralSub.textContent = `${data.countTotal} ${data.countTotal === 1 ? 'conta' : 'contas'}`;
+  if (totalReceitasVal) totalReceitasVal.textContent = formatCurrency(data.totalReceitasPrevistas);
+  if (totalReceitasSub) totalReceitasSub.textContent = `${data.countReceitas} ${data.countReceitas === 1 ? 'entrada' : 'entradas'}`;
 
-  if (totalPagoVal) totalPagoVal.textContent = formatCurrency(data.totalPago);
-  if (totalPagoSub) totalPagoSub.textContent = `${data.countPagas} ${data.countPagas === 1 ? 'quitada' : 'quitadas'}`;
+  if (totalDespesasVal) totalDespesasVal.textContent = formatCurrency(data.totalDespesasPrevistas);
+  if (totalDespesasSub) totalDespesasSub.textContent = `${data.countDespesas} ${data.countDespesas === 1 ? 'saída' : 'saídas'}`;
 
-  if (totalPagarVal) totalPagarVal.textContent = formatCurrency(data.totalPendente);
+  if (totalPagarVal) totalPagarVal.textContent = formatCurrency(data.totalDespesasPendentes);
   if (totalPagarSub) totalPagarSub.textContent = `${data.countPendentes} ${data.countPendentes === 1 ? 'pendente' : 'pendentes'}`;
 
   // Barra de Progresso
@@ -687,10 +750,10 @@ function renderHomeView() {
   const progressPaid = document.getElementById('home-progress-paid');
   const progressRemaining = document.getElementById('home-progress-remaining');
 
-  if (progressPct) progressPct.textContent = `${data.pctExecucao}% concluído`;
+  if (progressPct) progressPct.textContent = `${data.pctExecucao}% quitado`;
   if (progressBar) progressBar.style.width = `${data.pctExecucao}%`;
-  if (progressPaid) progressPaid.textContent = `${formatCurrency(data.totalPago)} quitados`;
-  if (progressRemaining) progressRemaining.textContent = `Faltam ${formatCurrency(data.totalPendente)}`;
+  if (progressPaid) progressPaid.textContent = `${formatCurrency(data.totalDespesasPagas)} quitadas`;
+  if (progressRemaining) progressRemaining.textContent = `Faltam ${formatCurrency(data.totalDespesasPendentes)}`;
 
   // Próximos Vencimentos
   renderHomeUpcomingBills(data.monthBills);
@@ -759,9 +822,21 @@ function renderHomeUpcomingBills(bills) {
   });
 
   listContainer.innerHTML = sorted.map(bill => {
-    const cat = getCategoryInfo(bill.category);
-    const dueInfo = getBillDueInfo(bill.dueDate, bill.status);
+    const isReceita = bill.nature === 'receita';
+    const cat = getCategoryInfo(bill.category, bill.nature);
+    const dueInfo = getBillDueInfo(bill.dueDate, bill.status, bill.nature);
     const isPaid = bill.status === 'paid';
+
+    const amountColor = isReceita ? 'text-secondary' : 'text-on-surface';
+    const amountSign = isReceita ? '+' : '-';
+
+    const actionBtnText = isReceita 
+      ? (isPaid ? '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Recebido</span>' : 'Receber')
+      : (isPaid ? '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Pago</span>' : 'Pagar');
+
+    const actionBtnClass = isPaid
+      ? 'bg-secondary text-on-secondary'
+      : (isReceita ? 'bg-secondary text-on-secondary hover:opacity-90' : 'bg-primary text-on-primary hover:opacity-90');
 
     return `
       <div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex items-center justify-between gap-2.5 transition-transform active:scale-[0.99] border border-surface-container-low ${isPaid ? 'opacity-75' : ''}">
@@ -770,24 +845,29 @@ function renderHomeUpcomingBills(bills) {
             <span class="material-symbols-outlined text-[20px]">${cat.icon}</span>
           </div>
           <div class="flex flex-col min-w-0">
-            <span class="font-body-md text-[13px] font-semibold text-on-surface truncate ${isPaid ? 'line-through decoration-outline/60' : ''}">
-              ${escapeHtml(bill.name)}
-            </span>
+            <div class="flex items-center gap-1.5">
+              <span class="font-body-md text-[13px] font-semibold text-on-surface truncate ${isPaid ? 'line-through decoration-outline/60' : ''}">
+                ${escapeHtml(bill.name)}
+              </span>
+              <span class="px-1.5 py-0.2 rounded-full font-label-sm text-[9px] font-semibold ${isReceita ? 'bg-secondary/15 text-secondary' : 'bg-error-container/30 text-error'}">
+                ${isReceita ? 'Receita' : 'Despesa'}
+              </span>
+            </div>
             <div class="flex items-center gap-1 mt-0.5">
               <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full ${dueInfo.badgeClass} font-label-sm text-[10px]">
                 ${dueInfo.isDueToday ? '<span class="material-symbols-outlined text-[11px]">alarm</span>' : ''}
                 ${dueInfo.text}
               </span>
-              <span class="text-on-surface-variant font-body-sm text-[11px] truncate">• ${escapeHtml(bill.category || 'Geral')}</span>
+              <span class="text-on-surface-variant font-body-sm text-[11px] truncate">• ${escapeHtml(bill.category || (isReceita ? 'Entradas' : 'Moradia'))}</span>
             </div>
           </div>
         </div>
         <div class="flex flex-col items-end shrink-0 gap-1">
-          <span class="font-amount-metric text-[14px] text-on-surface font-semibold tabular-nums ${isPaid ? 'line-through text-on-surface-variant' : ''}">
-            ${formatCurrency(bill.amount)}
+          <span class="font-amount-metric text-[14px] ${amountColor} font-bold tabular-nums ${isPaid ? 'line-through text-on-surface-variant' : ''}">
+            ${amountSign} ${formatCurrency(bill.amount)}
           </span>
-          <button onclick="toggleBillPayment('${bill.id}')" class="pay-btn px-2.5 py-1 rounded-lg ${isPaid ? 'bg-secondary text-on-secondary' : 'bg-primary text-on-primary hover:opacity-90'} font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
-            ${isPaid ? '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Pago</span>' : 'Pagar'}
+          <button onclick="toggleBillPayment('${bill.id}')" class="pay-btn px-2.5 py-1 rounded-lg ${actionBtnClass} font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
+            ${actionBtnText}
           </button>
         </div>
       </div>
@@ -796,7 +876,7 @@ function renderHomeUpcomingBills(bills) {
 }
 
 // ==========================================
-// TELA 2: CONTAS (Gestão e Listagem Filtrável)
+// TELA 2: CONTAS / LANÇAMENTOS (Gestão Filtrável)
 // ==========================================
 
 function renderBillsView() {
@@ -808,10 +888,12 @@ function renderBillsView() {
   if (monthLabel) monthLabel.textContent = `${monthName} ${appState.currentYear}`;
 
   // Metric Ribbon
-  const ribbonTotal = document.getElementById('bills-ribbon-total');
+  const ribbonReceitas = document.getElementById('bills-ribbon-receitas');
+  const ribbonDespesas = document.getElementById('bills-ribbon-despesas');
   const ribbonRestante = document.getElementById('bills-ribbon-restante');
-  if (ribbonTotal) ribbonTotal.textContent = formatCurrency(data.totalPrevisto);
-  if (ribbonRestante) ribbonRestante.textContent = formatCurrency(data.totalPendente);
+  if (ribbonReceitas) ribbonReceitas.textContent = formatCurrency(data.totalReceitasPrevistas);
+  if (ribbonDespesas) ribbonDespesas.textContent = formatCurrency(data.totalDespesasPrevistas);
+  if (ribbonRestante) ribbonRestante.textContent = formatCurrency(data.totalDespesasPendentes);
 
   // Contadores nas Abas de Filtro
   const countTodas = document.getElementById('count-tab-todas');
@@ -824,10 +906,11 @@ function renderBillsView() {
   if (countPagas) countPagas.textContent = data.countPagas;
   if (countAtrasadas) countAtrasadas.textContent = data.countAtrasadas;
 
-  // Filtragem das contas
+  // Filtragem dos lançamentos
   let filtered = [...data.monthBills];
   const query = appState.searchQuery.toLowerCase().trim();
 
+  // Filtro de Busca
   if (query) {
     filtered = filtered.filter(b => {
       const name = (b.name || '').toLowerCase();
@@ -836,8 +919,16 @@ function renderBillsView() {
     });
   }
 
+  // Filtro por Natureza (Todos, Despesas, Receitas)
+  if (appState.natureFilter === 'despesas') {
+    filtered = filtered.filter(b => b.nature !== 'receita');
+  } else if (appState.natureFilter === 'receitas') {
+    filtered = filtered.filter(b => b.nature === 'receita');
+  }
+
   const todayStr = new Date().toISOString().split('T')[0];
 
+  // Filtro por Status
   if (appState.activeFilter === 'a-pagar') {
     filtered = filtered.filter(b => b.status !== 'paid');
   } else if (appState.activeFilter === 'pagas') {
@@ -855,7 +946,7 @@ function renderBillsView() {
   const listSummaryCount = document.getElementById('bills-listed-count');
 
   if (listSummaryCount) {
-    listSummaryCount.textContent = `${filtered.length} ${filtered.length === 1 ? 'conta listada' : 'contas listadas'}`;
+    listSummaryCount.textContent = `${filtered.length} ${filtered.length === 1 ? 'item listado' : 'itens listados'}`;
   }
 
   if (filtered.length === 0) {
@@ -899,16 +990,16 @@ function renderBillsView() {
   let html = '';
 
   if (groupAtrasadas.length > 0) {
-    html += renderBillGroup('Atrasadas', groupAtrasadas, 'bg-error', 'text-error');
+    html += renderBillGroup('Pendentes Atrasados', groupAtrasadas, 'bg-error', 'text-error');
   }
   if (groupHoje7Dias.length > 0) {
     html += renderBillGroup('Hoje e Próximos 7 Dias', groupHoje7Dias, 'bg-amber-500 animate-pulse', 'text-on-surface');
   }
   if (groupMaisAdiante.length > 0) {
-    html += renderBillGroup('Próximas do Mês', groupMaisAdiante, 'bg-primary', 'text-on-surface');
+    html += renderBillGroup('Próximos do Mês', groupMaisAdiante, 'bg-primary', 'text-on-surface');
   }
   if (groupPagas.length > 0) {
-    html += renderBillGroup('Quitadas', groupPagas, 'bg-secondary', 'text-secondary');
+    html += renderBillGroup('Quitados e Recebidos', groupPagas, 'bg-secondary', 'text-secondary');
   }
 
   if (container) container.innerHTML = html;
@@ -932,39 +1023,56 @@ function renderBillGroup(title, bills, dotClass, textClass) {
 }
 
 function renderBillCard(bill) {
-  const cat = getCategoryInfo(bill.category);
-  const dueInfo = getBillDueInfo(bill.dueDate, bill.status);
+  const isReceita = bill.nature === 'receita';
+  const cat = getCategoryInfo(bill.category, bill.nature);
+  const dueInfo = getBillDueInfo(bill.dueDate, bill.status, bill.nature);
   const isPaid = bill.status === 'paid';
 
   let installmentInfo = '';
   if (bill.type === 'parcelada' && bill.totalInstallments > 1) {
     installmentInfo = `<span>• Parcela ${bill.currentInstallment || 1}/${bill.totalInstallments}</span>`;
   } else if (bill.type === 'fixa') {
-    installmentInfo = `<span>• Fixa</span>`;
+    installmentInfo = `<span>• Recorrente</span>`;
   }
+
+  const amountColor = isReceita ? 'text-secondary' : 'text-on-surface';
+  const amountSign = isReceita ? '+' : '-';
+
+  const actionBtnText = isReceita 
+    ? (isPaid ? '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Recebido</span>' : '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">arrow_downward</span> Receber</span>')
+    : (isPaid ? '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Paga</span>' : 'Pagar');
+
+  const actionBtnClass = isPaid
+    ? 'bg-secondary text-on-secondary'
+    : (isReceita ? 'bg-secondary text-on-secondary hover:opacity-90' : 'bg-primary text-on-primary hover:opacity-90');
 
   return `
     <article class="bill-card bg-surface-container-lowest rounded-xl p-3 shadow-sm flex flex-col gap-2 transition-transform active:scale-[0.99] border border-surface-container-low ${isPaid ? 'opacity-80' : ''}" data-id="${bill.id}">
       <div class="flex items-start justify-between gap-2.5">
         <div class="flex items-center gap-2.5 min-w-0">
-          <div class="w-10 h-10 rounded-xl ${cat.bg} flex items-center justify-center shrink-0">
-            <span class="material-symbols-outlined text-[22px]">${cat.icon}</span>
+          <div class="w-10 h-10 rounded-xl ${cat.bg} flex items-center justify-center shrink-0 shadow-sm">
+            <span class="material-symbols-outlined text-[20px]">${cat.icon}</span>
           </div>
           <div class="flex flex-col min-w-0">
-            <h3 class="font-headline-sm text-[14px] leading-snug text-on-surface truncate font-semibold ${isPaid ? 'line-through decoration-outline/60' : ''}">
-              ${escapeHtml(bill.name)}
-            </h3>
+            <div class="flex items-center gap-1.5">
+              <h3 class="font-headline-sm text-[14px] leading-snug text-on-surface truncate font-semibold ${isPaid ? 'line-through decoration-outline/60' : ''}">
+                ${escapeHtml(bill.name)}
+              </h3>
+              <span class="px-1.5 py-0.2 rounded-full font-label-sm text-[9px] font-semibold ${isReceita ? 'bg-secondary/15 text-secondary' : 'bg-error-container/30 text-error'}">
+                ${isReceita ? 'Receita' : 'Despesa'}
+              </span>
+            </div>
             <p class="font-body-sm text-[11px] text-on-surface-variant flex items-center gap-1 flex-wrap mt-0.5">
-              <span>${escapeHtml(bill.category || 'Geral')}</span>
+              <span>${escapeHtml(bill.category || (isReceita ? 'Entradas' : 'Moradia'))}</span>
               ${installmentInfo}
               <span>•</span>
-              <span class="${dueInfo.isOverdue || dueInfo.isDueToday ? 'text-error font-medium' : ''}">${dueInfo.text}</span>
+              <span class="${dueInfo.isOverdue || dueInfo.isDueToday ? (isReceita ? 'text-amber-500 font-medium' : 'text-error font-medium') : ''}">${dueInfo.text}</span>
             </p>
           </div>
         </div>
         <div class="flex flex-col items-end shrink-0">
-          <span class="font-amount-metric text-[14px] text-on-surface font-semibold tabular-nums ${isPaid ? 'line-through text-on-surface-variant' : ''}">
-            ${formatCurrency(bill.amount)}
+          <span class="font-amount-metric text-[14px] ${amountColor} font-bold tabular-nums ${isPaid ? 'line-through opacity-80' : ''}">
+            ${amountSign} ${formatCurrency(bill.amount)}
           </span>
           <span class="mt-0.5 px-2 py-0.5 rounded-full ${dueInfo.badgeClass} font-label-sm text-[9px] tracking-wide">
             ${dueInfo.text.toUpperCase()}
@@ -974,16 +1082,15 @@ function renderBillCard(bill) {
       <!-- Barra de Ações Rápidas -->
       <div class="pt-1.5 flex items-center justify-between border-t border-surface-container-low">
         <div class="flex items-center gap-1.5">
-          <button onclick="editBill('${bill.id}')" title="Editar Conta" class="w-7 h-7 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors">
+          <button onclick="editBill('${bill.id}')" title="Editar" class="w-7 h-7 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors">
             <span class="material-symbols-outlined text-[16px]">edit</span>
           </button>
-          <button onclick="confirmDeleteBill('${bill.id}')" title="Excluir Conta" class="w-7 h-7 rounded-lg bg-surface-container hover:bg-error-container text-on-surface-variant hover:text-error flex items-center justify-center transition-colors">
+          <button onclick="confirmDeleteBill('${bill.id}')" title="Excluir" class="w-7 h-7 rounded-lg bg-surface-container hover:bg-error-container text-on-surface-variant hover:text-error flex items-center justify-center transition-colors">
             <span class="material-symbols-outlined text-[16px]">delete</span>
           </button>
         </div>
-        <button onclick="toggleBillPayment('${bill.id}')" class="px-3 h-7 rounded-lg ${isPaid ? 'bg-secondary text-on-secondary' : 'bg-primary text-on-primary hover:opacity-90'} font-label-md text-[11px] font-medium flex items-center gap-1 shadow-sm active:scale-95 transition-all">
-          <span class="material-symbols-outlined text-[15px]">${isPaid ? 'done_all' : 'check_circle'}</span>
-          <span>${isPaid ? 'Paga' : 'Marcar Pago'}</span>
+        <button onclick="toggleBillPayment('${bill.id}')" class="px-3 h-7 rounded-lg ${actionBtnClass} font-label-md text-[11px] font-medium flex items-center gap-1 shadow-sm active:scale-95 transition-all">
+          ${actionBtnText}
         </button>
       </div>
     </article>
@@ -1001,6 +1108,20 @@ function setBillFilter(filterName) {
       btn.className = 'filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all';
     }
   });
+
+  renderBillsView();
+}
+
+function setNatureFilter(filter) {
+  appState.natureFilter = filter;
+  document.querySelectorAll('.nature-pill').forEach(btn => {
+    btn.className = 'nature-pill px-2.5 py-0.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-sm text-[10px] transition-all flex items-center gap-1';
+  });
+
+  const activeBtn = document.getElementById(`nature-tab-${filter}`);
+  if (activeBtn) {
+    activeBtn.className = 'nature-pill px-2.5 py-0.5 rounded-lg bg-surface-container-high text-on-surface font-label-sm text-[10px] font-semibold transition-all flex items-center gap-1';
+  }
 
   renderBillsView();
 }
@@ -1066,14 +1187,30 @@ function renderPlanningView() {
     }
   }
 
-  // Grid Planejado vs Realizado
+  // Grid Planejado vs Realizado (2x2)
+  const incomeTotalEl = document.getElementById('planning-income-total');
+  const incomeCountEl = document.getElementById('planning-income-count');
   const billsTotalEl = document.getElementById('planning-bills-total');
   const billsCountEl = document.getElementById('planning-bills-count');
   const realBalanceEl = document.getElementById('planning-real-balance');
+  const monthResultEl = document.getElementById('planning-month-result');
+  const monthResultSub = document.getElementById('planning-month-result-sub');
 
-  if (billsTotalEl) billsTotalEl.textContent = formatCurrency(data.totalPrevisto);
-  if (billsCountEl) billsCountEl.textContent = `${data.countTotal} ${data.countTotal === 1 ? 'compromisso' : 'compromissos'}`;
+  if (incomeTotalEl) incomeTotalEl.textContent = formatCurrency(data.totalReceitasPrevistas);
+  if (incomeCountEl) incomeCountEl.textContent = `${data.countReceitas} ${data.countReceitas === 1 ? 'entrada' : 'entradas'}`;
+
+  if (billsTotalEl) billsTotalEl.textContent = formatCurrency(data.totalDespesasPrevistas);
+  if (billsCountEl) billsCountEl.textContent = `${data.countDespesas} ${data.countDespesas === 1 ? 'saída' : 'saídas'}`;
+
   if (realBalanceEl) realBalanceEl.textContent = formatCurrency(data.saldoAtualReal);
+
+  if (monthResultEl) {
+    monthResultEl.textContent = formatCurrency(data.resultadoMes);
+    monthResultEl.className = `font-amount-metric text-[14px] ${data.resultadoMes >= 0 ? 'text-secondary font-bold' : 'text-error font-bold'} mt-0.5 tabular-nums`;
+  }
+  if (monthResultSub) {
+    monthResultSub.textContent = data.resultadoMes >= 0 ? 'Superávit no mês' : 'Déficit no mês';
+  }
 
   // Barra de Progresso da Execução
   const executionPctEl = document.getElementById('planning-execution-pct');
@@ -1085,8 +1222,8 @@ function renderPlanningView() {
   if (executionPctEl) executionPctEl.textContent = `${data.pctExecucao}% liquidado`;
   if (executionBarPaid) executionBarPaid.style.width = `${data.pctExecucao}%`;
   if (executionBarPending) executionBarPending.style.width = `${100 - data.pctExecucao}%`;
-  if (paidText) paidText.textContent = formatCurrency(data.totalPago);
-  if (pendingText) pendingText.textContent = formatCurrency(data.totalPendente);
+  if (paidText) paidText.textContent = formatCurrency(data.totalDespesasPagas);
+  if (pendingText) pendingText.textContent = formatCurrency(data.totalDespesasPendentes);
 
   // Projeção Futura em Cascata Contínua
   renderPlanningFutureProjections(data.saldoProjetadoFinal);
@@ -1119,10 +1256,11 @@ function renderPlanningFutureProjections(currentMonthFinalBalance) {
     }
 
     const monthBills = allBills.filter(b => b.dueDate && b.dueDate.startsWith(ymKey));
-    const totalDespesas = monthBills.reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
-    const sobraEstimada = rollingBalance - totalDespesas;
+    const monthReceitas = monthBills.filter(b => b.nature === 'receita').reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
+    const monthDespesas = monthBills.filter(b => b.nature !== 'receita').reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
+    const sobraEstimada = rollingBalance + monthReceitas - monthDespesas;
 
-    const namesPreview = monthBills.slice(0, 3).map(b => b.name).join(', ') || 'Nenhuma despesa agendada';
+    const namesPreview = monthBills.slice(0, 3).map(b => b.name).join(', ') || 'Nenhum lançamento agendado';
 
     html += `
       <div class="bg-surface-container-lowest p-3 rounded-xl shadow-sm space-y-1.5 border border-surface-container-low">
@@ -1133,12 +1271,15 @@ function renderPlanningFutureProjections(currentMonthFinalBalance) {
             </div>
             <div>
               <h4 class="font-headline-sm text-[14px] text-on-surface font-semibold">${MONTH_NAMES[m - 1]} ${y}</h4>
-              <span class="font-body-sm text-[11px] text-on-surface-variant">${monthBills.length} ${monthBills.length === 1 ? 'conta prevista' : 'contas previstas'}</span>
+              <span class="font-body-sm text-[11px] text-on-surface-variant">${monthBills.length} ${monthBills.length === 1 ? 'item previsto' : 'itens previstos'}</span>
             </div>
           </div>
           <div class="text-right">
-            <span class="font-amount-metric text-[14px] text-on-surface font-semibold tabular-nums">${formatCurrency(totalDespesas)}</span>
-            <div class="font-label-sm text-[10px] ${sobraEstimada >= 0 ? 'text-secondary font-semibold' : 'text-error font-semibold'} tabular-nums">
+            <div class="flex items-center gap-1.5 justify-end">
+              <span class="font-amount-metric text-[12px] text-secondary font-semibold tabular-nums">+${formatCurrency(monthReceitas)}</span>
+              <span class="font-amount-metric text-[12px] text-error font-semibold tabular-nums">-${formatCurrency(monthDespesas)}</span>
+            </div>
+            <div class="font-label-sm text-[10px] ${sobraEstimada >= 0 ? 'text-secondary font-semibold' : 'text-error font-semibold'} tabular-nums mt-0.5">
               Sobra est.: ${formatCurrency(sobraEstimada)}
             </div>
           </div>
@@ -1241,16 +1382,111 @@ async function resetMonthInitialBalanceToAuto() {
 }
 
 // ==========================================
-// TELA 4: MODAL DE NOVA / EDITAR CONTA
+// TELA 4: MODAL DE NOVO / EDITAR LANÇAMENTO
 // ==========================================
+
+function setBillNature(nature) {
+  appState.entryNature = nature;
+  const isReceita = nature === 'receita';
+
+  const tabDespesa = document.getElementById('tab-nature-despesa');
+  const tabReceita = document.getElementById('tab-nature-receita');
+  const dot = document.getElementById('modal-nature-dot');
+  const title = document.getElementById('modal-bill-title');
+  const amountLabel = document.getElementById('modal-amount-label');
+  const impactDiv = document.getElementById('modal-amount-impact');
+  const impactIcon = document.getElementById('modal-amount-impact-icon');
+  const impactText = document.getElementById('modal-amount-impact-text');
+  const dateLabel = document.getElementById('modal-date-label');
+  const saveBtn = document.getElementById('btn-modal-save');
+
+  if (isReceita) {
+    if (tabReceita) {
+      tabReceita.className = 'w-full py-2 px-2 rounded-lg bg-surface-container-lowest shadow-sm text-secondary font-headline-sm text-label-md flex items-center justify-center gap-1.5 transition-all';
+    }
+    if (tabDespesa) {
+      tabDespesa.className = 'w-full py-2 px-2 rounded-lg text-on-surface-variant font-headline-sm text-label-md flex items-center justify-center gap-1.5 hover:text-on-surface transition-all';
+    }
+    if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-secondary animate-pulse';
+    if (title) title.textContent = appState.editingBillId ? 'Editar Receita' : 'Nova Receita';
+    if (amountLabel) amountLabel.textContent = 'Valor da Receita';
+    if (impactDiv) impactDiv.className = 'flex items-center gap-1 text-secondary font-label-sm text-[11px] bg-secondary-container/30 px-3 py-0.5 rounded-full mt-1';
+    if (impactIcon) impactIcon.textContent = 'trending_up';
+    if (impactText) impactText.textContent = 'Impacto positivo no orçamento';
+    if (dateLabel) dateLabel.textContent = 'Data de Recebimento (DD/MM/AAAA)';
+    if (saveBtn) {
+      saveBtn.className = 'w-full h-11 bg-secondary text-on-secondary rounded-xl font-headline-sm text-[14px] font-bold flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all cursor-pointer';
+      saveBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">check_circle</span><span>Salvar Receita</span>';
+    }
+  } else {
+    if (tabDespesa) {
+      tabDespesa.className = 'w-full py-2 px-2 rounded-lg bg-surface-container-lowest shadow-sm text-error font-headline-sm text-label-md flex items-center justify-center gap-1.5 transition-all';
+    }
+    if (tabReceita) {
+      tabReceita.className = 'w-full py-2 px-2 rounded-lg text-on-surface-variant font-headline-sm text-label-md flex items-center justify-center gap-1.5 hover:text-on-surface transition-all';
+    }
+    if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-error animate-pulse';
+    if (title) title.textContent = appState.editingBillId ? 'Editar Despesa' : 'Nova Despesa';
+    if (amountLabel) amountLabel.textContent = 'Valor da Despesa';
+    if (impactDiv) impactDiv.className = 'flex items-center gap-1 text-error font-label-sm text-[11px] bg-error-container/40 dark:bg-red-950/50 px-3 py-0.5 rounded-full mt-1';
+    if (impactIcon) impactIcon.textContent = 'trending_down';
+    if (impactText) impactText.textContent = 'Impacto negativo no orçamento';
+    if (dateLabel) dateLabel.textContent = 'Data de Vencimento (DD/MM/AAAA)';
+    if (saveBtn) {
+      saveBtn.className = 'w-full h-11 bg-primary text-on-primary rounded-xl font-headline-sm text-[14px] font-bold flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all cursor-pointer';
+      saveBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">check_circle</span><span>Salvar Despesa</span>';
+    }
+  }
+
+  renderModalCategories();
+}
+
+function renderModalCategories() {
+  const container = document.getElementById('modal-categories-list');
+  if (!container) return;
+
+  const categories = appState.entryNature === 'receita' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  
+  // Garantir que selectedCategory pertence à lista atual
+  if (!categories.some(c => c.id === appState.selectedCategory)) {
+    appState.selectedCategory = categories[0].id;
+  }
+
+  const label = document.getElementById('modal-selected-cat-name');
+  if (label) label.textContent = appState.selectedCategory;
+
+  container.innerHTML = categories.map(cat => {
+    const isSelected = cat.id === appState.selectedCategory;
+    const isReceita = appState.entryNature === 'receita';
+    const activeColor = isReceita ? 'bg-secondary text-on-secondary border-secondary' : 'bg-primary text-on-primary border-primary';
+
+    if (isSelected) {
+      return `
+        <button class="cat-pill selected flex flex-col items-center gap-1 p-2 rounded-xl ${activeColor} shadow-sm min-w-[64px] transition-all cursor-pointer border" data-category="${cat.id}" onclick="selectCategoryInModal('${cat.id}')" type="button">
+          <div class="cat-icon-container w-8 h-8 rounded-full bg-white/20 dark:bg-black/20 flex items-center justify-center text-inherit">
+            <span class="material-symbols-outlined text-[18px]">${cat.icon}</span>
+          </div>
+          <span class="font-body-sm text-[11px] font-semibold">${escapeHtml(cat.label)}</span>
+        </button>
+      `;
+    } else {
+      return `
+        <button class="cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[64px] text-on-surface-variant hover:text-on-surface transition-all cursor-pointer border border-surface-container-high" data-category="${cat.id}" onclick="selectCategoryInModal('${cat.id}')" type="button">
+          <div class="cat-icon-container w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
+            <span class="material-symbols-outlined text-[18px]">${cat.icon}</span>
+          </div>
+          <span class="font-body-sm text-[11px]">${escapeHtml(cat.label)}</span>
+        </button>
+      `;
+    }
+  }).join('');
+}
 
 function openBillModal(billId = null) {
   appState.editingBillId = billId;
   const modal = document.getElementById('bill-modal');
   if (!modal) return;
 
-  const titleEl = document.getElementById('modal-bill-title');
-  const btnSaveEl = document.getElementById('btn-modal-save');
   const nameInput = document.getElementById('modal-bill-name');
   const amountInput = document.getElementById('modal-amount-input');
   const dueDateInput = document.getElementById('modal-due-date');
@@ -1263,21 +1499,19 @@ function openBillModal(billId = null) {
     const bill = allBills.find(b => b.id === billId);
     if (!bill) return;
 
-    if (titleEl) titleEl.textContent = 'Editar Conta';
-    if (btnSaveEl) btnSaveEl.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span><span>Atualizar Conta</span>';
+    setBillNature(bill.nature || 'despesa');
 
     if (nameInput) nameInput.value = bill.name || '';
     if (amountInput) amountInput.value = bill.amount ? bill.amount.toFixed(2).replace('.', ',') : '';
     if (dueDateInput) dueDateInput.value = formatDateBR(bill.dueDate);
 
-    selectCategoryInModal(bill.category || 'Moradia');
+    selectCategoryInModal(bill.category || (bill.nature === 'receita' ? 'Salário' : 'Moradia'));
     setBillType(bill.type || 'parcelada');
 
     if (installmentsContainer) installmentsContainer.classList.add('hidden');
   } else {
-    // Modo Nova Conta (Zero dados dummies)
-    if (titleEl) titleEl.textContent = 'Nova Conta';
-    if (btnSaveEl) btnSaveEl.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span><span>Salvar Conta</span>';
+    // Modo Novo Lançamento
+    setBillNature('despesa');
 
     if (nameInput) nameInput.value = '';
     if (amountInput) amountInput.value = '';
@@ -1342,17 +1576,16 @@ function selectCategoryInModal(categoryName) {
   const label = document.getElementById('modal-selected-cat-name');
   if (label) label.textContent = categoryName;
 
-  document.querySelectorAll('.cat-pill').forEach(pill => {
+  document.querySelectorAll('#modal-categories-list .cat-pill').forEach(pill => {
     const catAttr = pill.getAttribute('data-category');
     const isSelected = catAttr === categoryName;
-    const iconDiv = pill.querySelector('.cat-icon-container');
+    const isReceita = appState.entryNature === 'receita';
+    const activeColor = isReceita ? 'bg-secondary text-on-secondary border-secondary' : 'bg-primary text-on-primary border-primary';
 
     if (isSelected) {
-      pill.className = 'cat-pill selected flex flex-col items-center gap-1 p-2 rounded-xl bg-primary text-on-primary shadow-sm min-w-[62px] transition-all cursor-pointer';
-      if (iconDiv) iconDiv.className = 'cat-icon-container w-8 h-8 rounded-full bg-surface-container-lowest/20 flex items-center justify-center text-on-primary';
+      pill.className = `cat-pill selected flex flex-col items-center gap-1 p-2 rounded-xl ${activeColor} shadow-sm min-w-[64px] transition-all cursor-pointer border`;
     } else {
-      pill.className = 'cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[62px] text-on-surface-variant hover:text-on-surface transition-all cursor-pointer';
-      if (iconDiv) iconDiv.className = 'cat-icon-container w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface';
+      pill.className = `cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[64px] text-on-surface-variant hover:text-on-surface transition-all cursor-pointer border border-surface-container-high`;
     }
   });
 }
@@ -1397,22 +1630,23 @@ async function handleSaveBillForm() {
   const name = nameInput ? nameInput.value.trim() : '';
   const amount = parseCurrencyInput(amountInput ? amountInput.value : '');
   const dueDateBR = dueDateInput ? dueDateInput.value.trim() : '';
+  const nature = appState.entryNature || 'despesa';
 
   if (!name) {
-    alert('Por favor, informe o nome ou descrição da conta.');
+    alert(`Por favor, informe a descrição ou nome da ${nature === 'receita' ? 'receita' : 'despesa'}.`);
     if (nameInput) nameInput.focus();
     return;
   }
 
   if (amount <= 0) {
-    alert('Por favor, informe um valor válido para a conta.');
+    alert('Por favor, informe um valor válido.');
     if (amountInput) amountInput.focus();
     return;
   }
 
   const isoDueDate = parseDateBR(dueDateBR);
   if (!isoDueDate || isNaN(Date.parse(isoDueDate))) {
-    alert('Por favor, informe uma data de vencimento válida (DD/MM/AAAA).');
+    alert('Por favor, informe uma data válida (DD/MM/AAAA).');
     if (dueDateInput) dueDateInput.focus();
     return;
   }
@@ -1422,7 +1656,7 @@ async function handleSaveBillForm() {
   let billsToInsert = [];
 
   if (appState.editingBillId) {
-    // Atualização de conta existente
+    // Atualização de registro existente
     const index = allBills.findIndex(b => b.id === appState.editingBillId);
     if (index !== -1) {
       allBills[index] = {
@@ -1431,15 +1665,16 @@ async function handleSaveBillForm() {
         amount,
         dueDate: isoDueDate,
         category: appState.selectedCategory,
+        nature: nature,
         type: appState.billType,
         updatedAt: new Date().toISOString()
       };
       billToUpsert = allBills[index];
       saveStoredBills(allBills);
-      showToast(`Conta "${name}" atualizada com sucesso!`);
+      showToast(`${nature === 'receita' ? 'Receita' : 'Despesa'} "${name}" atualizada com sucesso!`);
     }
   } else {
-    // Nova Conta
+    // Novo Registro
     const numInstallments = appState.billType === 'parcelada' && installmentsInput 
       ? Math.max(1, parseInt(installmentsInput.value, 10) || 1) 
       : 1;
@@ -1471,6 +1706,7 @@ async function handleSaveBillForm() {
         amount: amount,
         dueDate: currentIsoDate,
         category: appState.selectedCategory,
+        nature: nature,
         type: appState.billType,
         currentInstallment: i + 1,
         totalInstallments: numInstallments,
@@ -1489,7 +1725,7 @@ async function handleSaveBillForm() {
     if (countToGenerate > 1) {
       showToast(`${countToGenerate} lançamentos gerados com sucesso!`);
     } else {
-      showToast(`Conta "${name}" adicionada com sucesso!`);
+      showToast(`${nature === 'receita' ? 'Receita' : 'Despesa'} "${name}" adicionada com sucesso!`);
     }
   }
 
@@ -1504,16 +1740,16 @@ async function handleSaveBillForm() {
         const { error } = await supabaseClient
           .from('bills')
           .upsert(mapAppBillToSupabase(billToUpsert));
-        if (error) console.error('Erro ao atualizar conta no Supabase:', error);
+        if (error) console.error('Erro ao atualizar no Supabase:', error);
       } else if (billsToInsert.length > 0) {
         const { error } = await supabaseClient
           .from('bills')
           .insert(billsToInsert.map(mapAppBillToSupabase));
-        if (error) console.error('Erro ao inserir contas no Supabase:', error);
+        if (error) console.error('Erro ao inserir no Supabase:', error);
       }
       updateSupabaseSyncStatus('connected');
     } catch (err) {
-      console.error('Falha ao salvar conta no Supabase:', err);
+      console.error('Falha ao salvar no Supabase:', err);
       updateSupabaseSyncStatus('error');
     }
   }
@@ -1524,6 +1760,8 @@ async function toggleBillPayment(billId) {
   const bill = allBills.find(b => b.id === billId);
   if (!bill) return;
 
+  const isReceita = bill.nature === 'receita';
+
   if (bill.status === 'paid') {
     bill.status = 'pending';
     bill.paidAt = null;
@@ -1531,7 +1769,7 @@ async function toggleBillPayment(billId) {
   } else {
     bill.status = 'paid';
     bill.paidAt = new Date().toISOString();
-    showToast(`"${bill.name}" (${formatCurrency(bill.amount)}) foi liquidada!`);
+    showToast(`"${bill.name}" (${formatCurrency(bill.amount)}) foi ${isReceita ? 'recebida' : 'liquidada'}!`);
   }
   bill.updatedAt = new Date().toISOString();
 
@@ -1551,10 +1789,10 @@ async function toggleBillPayment(billId) {
         })
         .eq('id', billId);
 
-      if (error) console.error('Erro ao atualizar status de pagamento no Supabase:', error);
+      if (error) console.error('Erro ao atualizar status no Supabase:', error);
       updateSupabaseSyncStatus('connected');
     } catch (err) {
-      console.error('Falha ao sincronizar pagamento no Supabase:', err);
+      console.error('Falha ao sincronizar no Supabase:', err);
       updateSupabaseSyncStatus('error');
     }
   }
@@ -1569,10 +1807,12 @@ async function confirmDeleteBill(billId) {
   const bill = allBills.find(b => b.id === billId);
   if (!bill) return;
 
-  if (confirm(`Deseja realmente excluir a conta "${bill.name}"?`)) {
+  const isReceita = bill.nature === 'receita';
+
+  if (confirm(`Deseja realmente excluir a ${isReceita ? 'receita' : 'despesa'} "${bill.name}"?`)) {
     const updated = allBills.filter(b => b.id !== billId);
     saveStoredBills(updated);
-    showToast(`Conta "${bill.name}" excluída.`);
+    showToast(`${isReceita ? 'Receita' : 'Despesa'} "${bill.name}" excluída.`);
     renderCurrentView();
 
     // Sincronização Supabase
@@ -1584,10 +1824,10 @@ async function confirmDeleteBill(billId) {
           .delete()
           .eq('id', billId);
 
-        if (error) console.error('Erro ao excluir conta no Supabase:', error);
+        if (error) console.error('Erro ao excluir no Supabase:', error);
         updateSupabaseSyncStatus('connected');
       } catch (err) {
-        console.error('Falha ao excluir conta no Supabase:', err);
+        console.error('Falha ao excluir no Supabase:', err);
         updateSupabaseSyncStatus('error');
       }
     }

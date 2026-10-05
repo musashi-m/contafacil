@@ -231,37 +231,37 @@
           </div>
         </div>
 
-        <!-- Métricas Rápidas das Contas (Grid 3 Colunas) -->
+        <!-- Métricas Rápidas das Contas (Grid 3 Colunas: Receitas (+), Despesas (-), A Pagar) -->
         <div class="grid grid-cols-3 gap-2">
-          <!-- Total -->
-          <div class="bg-surface-container-lowest rounded-xl p-2.5 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low">
-            <div class="w-1 h-full absolute left-0 top-0 bg-outline"></div>
-            <div class="flex items-center justify-between text-on-surface-variant">
-              <span class="font-label-sm text-[10px]">Total Geral</span>
-              <span class="material-symbols-outlined text-[15px]">receipt</span>
-            </div>
-            <div class="mt-1">
-              <span id="home-total-geral-val" class="font-amount-metric text-[14px] text-on-surface block truncate font-semibold tabular-nums">R$ 0,00</span>
-              <span id="home-total-geral-sub" class="font-body-sm text-[10px] text-on-surface-variant">0 contas</span>
-            </div>
-          </div>
-          <!-- Já Pago -->
+          <!-- Receitas Previstas -->
           <div class="bg-surface-container-lowest rounded-xl p-2.5 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low">
             <div class="w-1 h-full absolute left-0 top-0 bg-secondary"></div>
             <div class="flex items-center justify-between text-secondary">
-              <span class="font-label-sm text-[10px]">Já Pago</span>
-              <span class="material-symbols-outlined text-[15px]">check_circle</span>
+              <span class="font-label-sm text-[10px] font-semibold">Receitas (+)</span>
+              <span class="material-symbols-outlined text-[15px]">arrow_upward</span>
             </div>
             <div class="mt-1">
-              <span id="home-total-pago-val" class="font-amount-metric text-[14px] text-secondary block truncate font-semibold tabular-nums">R$ 0,00</span>
-              <span id="home-total-pago-sub" class="font-body-sm text-[10px] text-on-surface-variant">0 quitadas</span>
+              <span id="home-total-receitas-val" class="font-amount-metric text-[14px] text-secondary block truncate font-semibold tabular-nums">R$ 0,00</span>
+              <span id="home-total-receitas-sub" class="font-body-sm text-[10px] text-on-surface-variant">0 entradas</span>
             </div>
           </div>
-          <!-- A Pagar -->
+          <!-- Despesas Previstas -->
+          <div class="bg-surface-container-lowest rounded-xl p-2.5 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low">
+            <div class="w-1 h-full absolute left-0 top-0 bg-error"></div>
+            <div class="flex items-center justify-between text-error">
+              <span class="font-label-sm text-[10px] font-semibold">Despesas (-)</span>
+              <span class="material-symbols-outlined text-[15px]">arrow_downward</span>
+            </div>
+            <div class="mt-1">
+              <span id="home-total-despesas-val" class="font-amount-metric text-[14px] text-on-surface block truncate font-semibold tabular-nums">R$ 0,00</span>
+              <span id="home-total-despesas-sub" class="font-body-sm text-[10px] text-on-surface-variant">0 saídas</span>
+            </div>
+          </div>
+          <!-- A Pagar Pendente -->
           <div class="bg-surface-container-lowest rounded-xl p-2.5 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low">
             <div class="w-1 h-full absolute left-0 top-0 bg-on-tertiary-container"></div>
             <div class="flex items-center justify-between text-on-tertiary-container">
-              <span class="font-label-sm text-[10px]">A Pagar</span>
+              <span class="font-label-sm text-[10px] font-semibold">A Pagar</span>
               <span class="material-symbols-outlined text-[15px]">pending_actions</span>
             </div>
             <div class="mt-1">
@@ -345,21 +345,29 @@
           </button>
         </div>
 
-        <!-- Metric Ribbon Summary -->
-        <div class="w-full bg-surface-container-lowest rounded-xl p-2.5 shadow-sm flex items-center justify-between gap-2 border border-surface-container-low">
-          <div class="flex items-center gap-2 min-w-0">
-            <div class="w-2 h-7 rounded-full bg-primary shrink-0"></div>
+        <!-- Metric Ribbon Summary (Entradas vs Despesas vs Restante) -->
+        <div class="w-full bg-surface-container-lowest rounded-xl p-2.5 shadow-sm flex items-center justify-between gap-1.5 border border-surface-container-low">
+          <div class="flex items-center gap-1.5 min-w-0 flex-1">
+            <div class="w-1.5 h-6 rounded-full bg-secondary shrink-0"></div>
             <div class="flex flex-col min-w-0">
-              <span class="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider">Total Previsto</span>
-              <span id="bills-ribbon-total" class="font-amount-metric text-[14px] text-on-surface truncate font-semibold tabular-nums">R$ 0,00</span>
+              <span class="font-label-sm text-[9px] text-secondary font-semibold uppercase tracking-wider">Receitas (+)</span>
+              <span id="bills-ribbon-receitas" class="font-amount-metric text-[13px] text-secondary truncate font-semibold tabular-nums">R$ 0,00</span>
             </div>
           </div>
           <div class="h-5 w-px bg-surface-container-highest shrink-0"></div>
-          <div class="flex items-center gap-2 min-w-0">
-            <div class="w-2 h-7 rounded-full bg-secondary shrink-0"></div>
+          <div class="flex items-center gap-1.5 min-w-0 flex-1">
+            <div class="w-1.5 h-6 rounded-full bg-error shrink-0"></div>
             <div class="flex flex-col min-w-0">
-              <span class="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider">Restante a Pagar</span>
-              <span id="bills-ribbon-restante" class="font-amount-metric text-[14px] text-secondary truncate font-semibold tabular-nums">R$ 0,00</span>
+              <span class="font-label-sm text-[9px] text-error font-semibold uppercase tracking-wider">Despesas (-)</span>
+              <span id="bills-ribbon-despesas" class="font-amount-metric text-[13px] text-on-surface truncate font-semibold tabular-nums">R$ 0,00</span>
+            </div>
+          </div>
+          <div class="h-5 w-px bg-surface-container-highest shrink-0"></div>
+          <div class="flex items-center gap-1.5 min-w-0 flex-1">
+            <div class="w-1.5 h-6 rounded-full bg-on-tertiary-container shrink-0"></div>
+            <div class="flex flex-col min-w-0">
+              <span class="font-label-sm text-[9px] text-on-surface-variant uppercase tracking-wider">A Pagar</span>
+              <span id="bills-ribbon-restante" class="font-amount-metric text-[13px] text-on-tertiary-container truncate font-semibold tabular-nums">R$ 0,00</span>
             </div>
           </div>
         </div>
@@ -367,27 +375,43 @@
         <!-- Search Input -->
         <div class="relative flex items-center">
           <span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[18px] pointer-events-none">search</span>
-          <input id="bill-search-input" class="w-full h-9 pl-9 pr-3 rounded-xl bg-surface-container-lowest text-on-surface font-body-md text-[13px] placeholder:text-on-surface-variant/70 shadow-sm outline-none border border-surface-container-low focus:border-primary transition-all" placeholder="Buscar conta ou categoria..." type="search"/>
+          <input id="bill-search-input" class="w-full h-9 pl-9 pr-3 rounded-xl bg-surface-container-lowest text-on-surface font-body-md text-[13px] placeholder:text-on-surface-variant/70 shadow-sm outline-none border border-surface-container-low focus:border-primary transition-all" placeholder="Buscar lançamento ou categoria..." type="search"/>
         </div>
 
-        <!-- Segmented Tabs (Horizontal Scrollable) -->
-        <div class="overflow-x-auto no-scrollbar -mx-4 px-4 py-0.5">
-          <div class="flex items-center gap-1.5 min-w-max" id="filter-tabs">
-            <button onclick="setBillFilter('todas')" class="filter-tab px-3 h-7 rounded-full bg-primary text-on-primary font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="todas">
-              <span>Todas</span>
-              <span id="count-tab-todas" class="px-1.5 py-0.2 rounded-full bg-surface-container-highest/20 font-label-sm text-[9px]">0</span>
+        <!-- Segmented Status Tabs & Nature Filter (Horizontal Scrollable) -->
+        <div class="flex flex-col gap-1.5">
+          <div class="overflow-x-auto no-scrollbar -mx-4 px-4 py-0.5">
+            <div class="flex items-center gap-1.5 min-w-max" id="filter-tabs">
+              <button onclick="setBillFilter('todas')" class="filter-tab px-3 h-7 rounded-full bg-primary text-on-primary font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="todas">
+                <span>Todos</span>
+                <span id="count-tab-todas" class="px-1.5 py-0.2 rounded-full bg-surface-container-highest/20 font-label-sm text-[9px]">0</span>
+              </button>
+              <button onclick="setBillFilter('a-pagar')" class="filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="a-pagar">
+                <span>Pendentes</span>
+                <span id="count-tab-a-pagar" class="px-1.5 py-0.2 rounded-full bg-surface-container font-label-sm text-[9px] text-on-surface-variant">0</span>
+              </button>
+              <button onclick="setBillFilter('pagas')" class="filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="pagas">
+                <span>Quitados/Recebidos</span>
+                <span id="count-tab-pagas" class="px-1.5 py-0.2 rounded-full bg-secondary/10 font-label-sm text-[9px] text-secondary">0</span>
+              </button>
+              <button onclick="setBillFilter('atrasadas')" class="filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="atrasadas">
+                <span>Atrasados</span>
+                <span id="count-tab-atrasadas" class="px-1.5 py-0.2 rounded-full bg-surface-container font-label-sm text-[9px]">0</span>
+              </button>
+            </div>
+          </div>
+          <!-- Sub-filtro por Natureza: Todos, Despesas, Receitas -->
+          <div class="flex items-center gap-1.5" id="nature-filter-bar">
+            <button onclick="setNatureFilter('todos')" id="nature-tab-todos" class="nature-pill px-2.5 py-0.5 rounded-lg bg-surface-container-high text-on-surface font-label-sm text-[10px] font-semibold transition-all">
+              Todos
             </button>
-            <button onclick="setBillFilter('a-pagar')" class="filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="a-pagar">
-              <span>A Pagar</span>
-              <span id="count-tab-a-pagar" class="px-1.5 py-0.2 rounded-full bg-surface-container font-label-sm text-[9px] text-on-surface-variant">0</span>
+            <button onclick="setNatureFilter('despesas')" id="nature-tab-despesas" class="nature-pill px-2.5 py-0.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-sm text-[10px] transition-all flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+              <span>Só Despesas</span>
             </button>
-            <button onclick="setBillFilter('pagas')" class="filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="pagas">
-              <span>Pagas</span>
-              <span id="count-tab-pagas" class="px-1.5 py-0.2 rounded-full bg-secondary/10 font-label-sm text-[9px] text-secondary">0</span>
-            </button>
-            <button onclick="setBillFilter('atrasadas')" class="filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="atrasadas">
-              <span>Atrasadas</span>
-              <span id="count-tab-atrasadas" class="px-1.5 py-0.2 rounded-full bg-surface-container font-label-sm text-[9px]">0</span>
+            <button onclick="setNatureFilter('receitas')" id="nature-tab-receitas" class="nature-pill px-2.5 py-0.5 rounded-lg bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-sm text-[10px] transition-all flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+              <span>Só Receitas</span>
             </button>
           </div>
         </div>
@@ -495,20 +519,38 @@
             </div>
           </div>
 
-          <!-- Métricas em Grid -->
+          <!-- Métricas em Grid (2x2) -->
           <div class="grid grid-cols-2 gap-2">
+            <!-- (+) Receitas Previstas -->
             <div class="bg-surface-container-low p-2 rounded-lg flex flex-col justify-between">
-              <span class="font-label-sm text-[10px] text-on-surface-variant">(-) Contas Previstas</span>
-              <span id="planning-bills-total" class="font-amount-metric text-[14px] text-on-surface mt-0.5 font-semibold tabular-nums">R$ 0,00</span>
+              <span class="font-label-sm text-[10px] text-secondary font-semibold">(+) Receitas Previstas</span>
+              <span id="planning-income-total" class="font-amount-metric text-[14px] text-secondary mt-0.5 font-bold tabular-nums">R$ 0,00</span>
               <div class="flex items-center gap-1 mt-0.5 text-on-surface-variant">
-                <span id="planning-bills-count" class="font-body-sm text-[9px]">0 compromissos</span>
+                <span id="planning-income-count" class="font-body-sm text-[9px]">0 entradas</span>
               </div>
             </div>
+            <!-- (-) Despesas Previstas -->
+            <div class="bg-surface-container-low p-2 rounded-lg flex flex-col justify-between">
+              <span class="font-label-sm text-[10px] text-error font-semibold">(-) Despesas Previstas</span>
+              <span id="planning-bills-total" class="font-amount-metric text-[14px] text-on-surface mt-0.5 font-semibold tabular-nums">R$ 0,00</span>
+              <div class="flex items-center gap-1 mt-0.5 text-on-surface-variant">
+                <span id="planning-bills-count" class="font-body-sm text-[9px]">0 saídas</span>
+              </div>
+            </div>
+            <!-- Saldo em Conta Hoje -->
             <div class="bg-surface-container-low p-2 rounded-lg flex flex-col justify-between">
               <span class="font-label-sm text-[10px] text-on-surface-variant">Saldo em Conta Hoje</span>
               <span id="planning-real-balance" class="font-amount-metric text-[14px] text-on-surface mt-0.5 font-semibold tabular-nums">R$ 0,00</span>
               <div class="flex items-center gap-1 mt-0.5 text-secondary font-medium">
-                <span class="font-body-sm text-[9px]">Liquidez imediata</span>
+                <span class="font-body-sm text-[9px]">Liquidez atual</span>
+              </div>
+            </div>
+            <!-- Balanço do Mês -->
+            <div class="bg-surface-container-low p-2 rounded-lg flex flex-col justify-between">
+              <span class="font-label-sm text-[10px] text-on-surface-variant">Balanço do Mês</span>
+              <span id="planning-month-result" class="font-amount-metric text-[14px] text-on-surface mt-0.5 font-semibold tabular-nums">R$ 0,00</span>
+              <div class="flex items-center gap-1 mt-0.5 text-on-surface-variant">
+                <span id="planning-month-result-sub" class="font-body-sm text-[9px]">Receitas - Despesas</span>
               </div>
             </div>
           </div>
@@ -596,35 +638,47 @@
             <button onclick="closeBillModal()" aria-label="Fechar" class="w-8 h-8 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container active:scale-95 transition-all">
               <span class="material-symbols-outlined text-[20px]">close</span>
             </button>
-            <h2 id="modal-bill-title" class="font-headline-sm text-[16px] text-on-surface tracking-tight font-bold">Nova Conta</h2>
+            <h2 id="modal-bill-title" class="font-headline-sm text-[16px] text-on-surface tracking-tight font-bold">Novo Lançamento</h2>
           </div>
-          <span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+          <span id="modal-nature-dot" class="w-2.5 h-2.5 rounded-full bg-error animate-pulse"></span>
         </div>
 
         <!-- Conteúdo do Formulário (Rola internamente) -->
-        <div class="flex-1 overflow-y-auto p-4 space-y-3.5 pb-4 bg-surface">
+        <div class="flex-1 overflow-y-auto p-4 space-y-3 pb-4 bg-surface">
+          <!-- Nature Selector Toggle: Despesa (Saída) vs Receita (Entrada) -->
+          <div class="grid grid-cols-2 p-1 bg-surface-container rounded-xl gap-1 border border-surface-container-high">
+            <button onclick="setBillNature('despesa')" class="w-full py-2 px-2 rounded-lg bg-surface-container-lowest shadow-sm text-error font-headline-sm text-label-md flex items-center justify-center gap-1.5 transition-all" id="tab-nature-despesa" type="button">
+              <span class="material-symbols-outlined text-[17px] text-error">arrow_downward</span>
+              <span class="font-semibold">Despesa (Saída)</span>
+            </button>
+            <button onclick="setBillNature('receita')" class="w-full py-2 px-2 rounded-lg text-on-surface-variant font-headline-sm text-label-md flex items-center justify-center gap-1.5 hover:text-on-surface transition-all" id="tab-nature-receita" type="button">
+              <span class="material-symbols-outlined text-[17px] text-secondary">arrow_upward</span>
+              <span class="font-semibold">Receita (Entrada)</span>
+            </button>
+          </div>
+
           <!-- Type Selector Toggle Pills -->
           <div class="grid grid-cols-2 p-1 bg-surface-container rounded-xl gap-1 border border-surface-container-high">
-            <button onclick="setBillType('parcelada')" class="w-full py-2 px-2 rounded-lg bg-surface-container-lowest shadow-sm text-on-surface font-headline-sm text-label-md flex items-center justify-center gap-1.5 transition-all" id="tab-parcelada" type="button">
-              <span class="material-symbols-outlined text-[17px] text-secondary">view_timeline</span>
+            <button onclick="setBillType('parcelada')" class="w-full py-1.5 px-2 rounded-lg bg-surface-container-lowest shadow-sm text-on-surface font-headline-sm text-label-md flex items-center justify-center gap-1.5 transition-all" id="tab-parcelada" type="button">
+              <span class="material-symbols-outlined text-[16px] text-secondary">view_timeline</span>
               <span>Parcelada / Variável</span>
             </button>
-            <button onclick="setBillType('fixa')" class="w-full py-2 px-2 rounded-lg text-on-surface-variant font-headline-sm text-label-md flex items-center justify-center gap-1.5 hover:text-on-surface transition-all" id="tab-fixa" type="button">
-              <span class="material-symbols-outlined text-[17px]">sync</span>
-              <span>Despesa Fixa</span>
+            <button onclick="setBillType('fixa')" class="w-full py-1.5 px-2 rounded-lg text-on-surface-variant font-headline-sm text-label-md flex items-center justify-center gap-1.5 hover:text-on-surface transition-all" id="tab-fixa" type="button">
+              <span class="material-symbols-outlined text-[16px]">sync</span>
+              <span>Recorrente / Fixa</span>
             </button>
           </div>
 
           <!-- Amount Hero Input Card -->
           <div class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm flex flex-col items-center justify-center text-center relative overflow-hidden border border-surface-container-high">
-            <span class="font-label-sm text-[11px] text-on-surface-variant uppercase tracking-wider mb-1 font-semibold">Valor da Conta</span>
+            <span id="modal-amount-label" class="font-label-sm text-[11px] text-on-surface-variant uppercase tracking-wider mb-1 font-semibold">Valor da Despesa</span>
             <div class="flex items-baseline justify-center gap-1.5 my-1 w-full">
               <span class="font-headline-md text-headline-md text-on-surface-variant">R$</span>
               <input id="modal-amount-input" class="font-display-currency-mobile text-[32px] text-on-surface text-center bg-transparent border-0 outline-none w-52 focus:w-60 transition-all font-bold placeholder:text-on-surface-variant/40 tabular-nums" inputmode="decimal" placeholder="0,00" type="text"/>
             </div>
-            <div class="flex items-center gap-1 text-secondary font-label-sm text-[11px] bg-secondary-container/30 px-3 py-0.5 rounded-full mt-1">
-              <span class="material-symbols-outlined text-[14px]">trending_down</span>
-              <span>Impacto mensal no orçamento</span>
+            <div id="modal-amount-impact" class="flex items-center gap-1 text-error font-label-sm text-[11px] bg-error-container/40 dark:bg-red-950/50 px-3 py-0.5 rounded-full mt-1">
+              <span id="modal-amount-impact-icon" class="material-symbols-outlined text-[14px]">trending_down</span>
+              <span id="modal-amount-impact-text">Impacto negativo no orçamento</span>
             </div>
           </div>
 
@@ -633,18 +687,18 @@
             <!-- Descrição da Conta -->
             <div class="flex flex-col gap-1">
               <label class="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between" for="modal-bill-name">
-                <span>Descrição / Nome da Conta</span>
+                <span id="modal-name-label">Descrição / Nome</span>
                 <span class="font-body-sm text-[11px] text-on-surface-variant font-normal">Obrigatório</span>
               </label>
               <div class="relative flex items-center">
                 <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-[18px] pointer-events-none">edit_note</span>
-                <input id="modal-bill-name" class="w-full h-11 pl-10 pr-3 bg-surface-container-lowest rounded-xl font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 shadow-sm border border-surface-container-high focus:outline-none focus:border-primary transition-colors" placeholder="Ex: Aluguel, Celular, Cartão..." type="text"/>
+                <input id="modal-bill-name" class="w-full h-11 pl-10 pr-3 bg-surface-container-lowest rounded-xl font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 shadow-sm border border-surface-container-high focus:outline-none focus:border-primary transition-colors" placeholder="Ex: Salário, Aluguel, Freelance..." type="text"/>
               </div>
             </div>
 
-            <!-- Data de Vencimento -->
+            <!-- Data de Vencimento / Recebimento -->
             <div class="flex flex-col gap-1">
-              <label class="font-label-md text-label-md text-on-surface font-semibold" for="modal-due-date">Data de Vencimento (DD/MM/AAAA)</label>
+              <label id="modal-date-label" class="font-label-md text-label-md text-on-surface font-semibold" for="modal-due-date">Data de Vencimento (DD/MM/AAAA)</label>
               <div class="relative flex items-center">
                 <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-[18px] pointer-events-none">calendar_month</span>
                 <input id="modal-due-date" class="w-full h-11 pl-10 pr-3 bg-surface-container-lowest rounded-xl font-body-md text-body-md text-on-surface shadow-sm border border-surface-container-high focus:outline-none focus:border-primary transition-colors" placeholder="DD/MM/AAAA" type="text"/>
@@ -664,55 +718,14 @@
               </div>
             </div>
 
-            <!-- Seletor de Categoria -->
+            <!-- Seletor de Categoria Dinâmico -->
             <div class="flex flex-col gap-1.5">
               <div class="flex items-center justify-between">
                 <label class="font-label-md text-label-md text-on-surface font-semibold">Categoria</label>
-                <span id="modal-selected-cat-name" class="font-label-sm text-label-sm text-secondary font-semibold">Moradia</span>
+                <span id="modal-selected-cat-name" class="font-label-sm text-label-sm text-secondary font-semibold">--</span>
               </div>
-              <div class="flex gap-2 overflow-x-auto pb-1.5 no-scrollbar">
-                <button class="cat-pill selected flex flex-col items-center gap-1 p-2 rounded-xl bg-primary text-on-primary shadow-sm min-w-[64px] transition-all cursor-pointer border border-primary" data-category="Moradia" onclick="selectCategoryInModal('Moradia')" type="button">
-                  <div class="cat-icon-container w-8 h-8 rounded-full bg-white/20 dark:bg-black/20 flex items-center justify-center text-on-primary">
-                    <span class="material-symbols-outlined text-[18px]">home</span>
-                  </div>
-                  <span class="font-body-sm text-[11px] font-semibold">Moradia</span>
-                </button>
-                <button class="cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[64px] text-on-surface-variant hover:text-on-surface transition-all cursor-pointer border border-surface-container-high" data-category="Alimentação" onclick="selectCategoryInModal('Alimentação')" type="button">
-                  <div class="cat-icon-container w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
-                    <span class="material-symbols-outlined text-[18px]">restaurant</span>
-                  </div>
-                  <span class="font-body-sm text-[11px]">Alimentação</span>
-                </button>
-                <button class="cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[64px] text-on-surface-variant hover:text-on-surface transition-all cursor-pointer border border-surface-container-high" data-category="Saúde" onclick="selectCategoryInModal('Saúde')" type="button">
-                  <div class="cat-icon-container w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
-                    <span class="material-symbols-outlined text-[18px]">medical_services</span>
-                  </div>
-                  <span class="font-body-sm text-[11px]">Saúde</span>
-                </button>
-                <button class="cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[64px] text-on-surface-variant hover:text-on-surface transition-all cursor-pointer border border-surface-container-high" data-category="Cartão de Crédito" onclick="selectCategoryInModal('Cartão de Crédito')" type="button">
-                  <div class="cat-icon-container w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
-                    <span class="material-symbols-outlined text-[18px]">credit_card</span>
-                  </div>
-                  <span class="font-body-sm text-[11px]">Cartão</span>
-                </button>
-                <button class="cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[64px] text-on-surface-variant hover:text-on-surface transition-all cursor-pointer border border-surface-container-high" data-category="Transporte" onclick="selectCategoryInModal('Transporte')" type="button">
-                  <div class="cat-icon-container w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
-                    <span class="material-symbols-outlined text-[18px]">directions_car</span>
-                  </div>
-                  <span class="font-body-sm text-[11px]">Transporte</span>
-                </button>
-                <button class="cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[64px] text-on-surface-variant hover:text-on-surface transition-all cursor-pointer border border-surface-container-high" data-category="Educação" onclick="selectCategoryInModal('Educação')" type="button">
-                  <div class="cat-icon-container w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
-                    <span class="material-symbols-outlined text-[18px]">school</span>
-                  </div>
-                  <span class="font-body-sm text-[11px]">Educação</span>
-                </button>
-                <button class="cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[64px] text-on-surface-variant hover:text-on-surface transition-all cursor-pointer border border-surface-container-high" data-category="Serviços" onclick="selectCategoryInModal('Serviços')" type="button">
-                  <div class="cat-icon-container w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
-                    <span class="material-symbols-outlined text-[18px]">bolt</span>
-                  </div>
-                  <span class="font-body-sm text-[11px]">Serviços</span>
-                </button>
+              <div id="modal-categories-list" class="flex gap-2 overflow-x-auto pb-1.5 no-scrollbar">
+                <!-- Injetado dinamicamente via JS com base na Natureza (Despesa vs Receita) -->
               </div>
             </div>
 

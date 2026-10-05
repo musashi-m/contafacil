@@ -1,0 +1,15 @@
+# Dependências e Logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Arquivos de sistema e SO
+.DS_Store
+Thumbs.db
+
+# Arquivos temporários e de depuração
+.tempmediaStorage/
+*.log
+debug_*.png
+screenshot*.png

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "error": "#ba1a1a", "on-tertiary-fixed-variant": "#653e00", "tertiary-fixed-dim": "#ffb95f", "secondary": "#006c49", "surface-variant": "#e0e3e5", "tertiary": "#000000", "surface-tint": "#565e74", "tertiary-container": "#2a1700", "inverse-surface": "#2d3133", "on-secondary-container": "#00714d", "outline": "#76777d", "on-surface-variant": "#45464d", "primary": "#000000", "error-container": "#ffdad6", "outline-variant": "#c6c6cd", "surface-container-highest": "#e0e3e5", "inverse-primary": "#bec6e0", "on-tertiary-container": "#b87500", "inverse-on-surface": "#eff1f3", "on-surface": "#191c1e", "on-secondary-fixed-variant": "#005236", "surface-container": "#eceef0", "primary-container": "#131b2e", "on-primary": "#ffffff", "on-error-container": "#93000a", "surface-dim": "#d8dadc", "on-tertiary": "#ffffff", "primary-fixed-dim": "#bec6e0", "on-primary-fixed-variant": "#3f465c", "on-primary-fixed": "#131b2e", "primary-fixed": "#dae2fd", "surface-container-low": "#f2f4f6", "on-background": "#191c1e", "on-secondary": "#ffffff", "secondary-fixed-dim": "#4edea3", "on-error": "#ffffff", "on-tertiary-fixed": "#2a1700", "tertiary-fixed": "#ffddb8", "background": "#f7f9fb", "on-primary-container": "#7c839b", "secondary-fixed": "#6ffbbe", "surface-container-lowest": "#ffffff", "surface": "#f7f9fb", "surface-container-high": "#e6e8ea", "on-secondary-fixed": "#002113", "surface-bright": "#f7f9fb", "secondary-container": "#6cf8bb" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-tablet": "1.5rem", "margin-desktop": "2rem", "space-md": "1rem", "gutter": "1rem", "space-xl": "2rem", "margin": "1rem", "gutter-sm": "0.75rem", "space-sm": "0.5rem", "space-lg": "1.5rem", "space-xs": "0.25rem" }, fontFamily: { "display-currency": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "display-currency-mobile": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "amount-metric": ["Plus Jakarta Sans"], "label-md": ["Inter"], "body-sm": ["Inter"], "label-sm": ["Inter"], "body-md": ["Inter"] }, fontSize: { "display-currency": ["36px", { lineHeight: "44px", letterSpacing: "-0.03em", fontWeight: "700" }], "headline-lg": ["28px", { lineHeight: "34px", letterSpacing: "-0.02em", fontWeight: "700" }], "display-currency-mobile": ["30px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-lg": ["16px", { lineHeight: "24px", letterSpacing: "-0.005em", fontWeight: "400" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.015em", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "600" }], "amount-metric": ["16px", { lineHeight: "20px", letterSpacing: "-0.01em", fontWeight: "600" }], "label-md": ["13px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["12px", { lineHeight: "16px", letterSpacing: "0em", fontWeight: "400" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="ContaFácil Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UkYlhUVyxLHMvIg2A0fMqW7ji4xmImkZwaIdDzrd2yF4QFo4lpdrcoycOdhx7QDpeO-Kys6w0e8QHbWDqjKRuHTItHVapgy72br-WeGUyV8l-nFs3wG5vhCwFBxOiuNVGzUWHcP76CNsqIAtAd_cebBnVzVYCSphW6zzOdVbQcohTdXQar7Fn91r5tsGComBLeLx8qteu1s0XN4kokvAXYaoj_cTVjnaWcl_546GyuxLmf1me63F5y4SID"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none">ContaFácil</span><span class="font-label-sm text-label-sm text-on-surface-variant leading-none mt-0.5">Contas</span></div></div><div class="flex items-center gap-space-xs"><button aria-label="Notificações" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface"><div class="flex flex-col w-full pb-20">
+<!-- Month Selector & Global Monthly Status Strip -->
+<section class="px-margin pt-space-sm pb-space-xs flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<button aria-label="Mês anterior" class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-container-high transition-colors active:scale-95 text-on-surface">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+<div class="flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-surface-container-low cursor-pointer">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">calendar_month</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Novembro 2024</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span>
+</div>
+<button aria-label="Próximo mês" class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-container-high transition-colors active:scale-95 text-on-surface">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+<div class="w-9 h-9 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">analytics</span>
+</div>
+</div>
+<!-- Metric Ribbon Summary -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-space-sm shadow-sm flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<div class="w-2.5 h-8 rounded-full bg-primary shrink-0"></div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Total Previsto</span>
+<span class="font-amount-metric text-amount-metric text-on-surface truncate">R$ 4.230,00</span>
+</div>
+</div>
+<div class="h-6 w-px bg-surface-container-highest shrink-0"></div>
+<div class="flex items-center gap-space-xs min-w-0">
+<div class="w-2.5 h-8 rounded-full bg-secondary shrink-0"></div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Restante a Pagar</span>
+<span class="font-amount-metric text-amount-metric text-secondary truncate">R$ 2.580,00</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Search & Category Filters -->
+<section class="px-margin pt-space-xs pb-space-xs">
+<div class="flex items-center gap-space-xs">
+<div class="flex-1 relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full h-11 pl-10 pr-4 rounded-xl bg-surface-container-lowest text-on-surface font-body-md text-body-md placeholder:text-on-surface-variant/70 shadow-sm outline-none focus:bg-surface-container-low transition-all" id="bill-search" placeholder="Buscar conta ou fornecedor..." type="search"/>
+</div>
+<button aria-label="Filtrar por categoria" class="w-11 h-11 shrink-0 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-on-surface flex items-center justify-center shadow-sm active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</button>
+</div>
+</section>
+<!-- Segmented Tabs (Horizontal Scrollable) -->
+<section class="pt-space-xs pb-space-xs overflow-x-auto scrollbar-none px-margin">
+<div class="flex items-center gap-space-xs min-w-max" id="filter-tabs">
+<button class="filter-tab px-4 h-9 rounded-full bg-primary text-on-primary font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-all" data-filter="todas">
+<span>Todas</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-highest/20 font-label-sm text-label-sm">8</span>
+</button>
+<button class="filter-tab px-4 h-9 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-all" data-filter="a-pagar">
+<span>A Pagar</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container font-label-sm text-label-sm text-on-surface-variant">5</span>
+</button>
+<button class="filter-tab px-4 h-9 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-all" data-filter="pagas">
+<span>Pagas</span>
+<span class="px-1.5 py-0.2 rounded-full bg-secondary/10 font-label-sm text-label-sm text-secondary">3</span>
+</button>
+<button class="filter-tab px-4 h-9 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-all" data-filter="atrasadas">
+<span>Atrasadas</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container font-label-sm text-label-sm">0</span>
+</button>
+</div>
+</section>
+<!-- Sorting Bar -->
+<section class="px-margin py-space-xs flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-on-surface-variant cursor-pointer group">
+<span class="material-symbols-outlined text-[18px]">sort</span>
+<span class="font-label-md text-label-md group-hover:text-on-surface">Vencimento (mais próximos)</span>
+<span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">8 contas listadas</span>
+</section>
+<!-- Main Content Lists Section -->
+<main class="px-margin flex flex-col gap-space-lg pt-space-xs">
+<!-- Group 1: Hoje e Próximos 7 Dias -->
+<div class="bill-group flex flex-col gap-space-sm" data-category="proximos">
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Hoje e Próximos 7 Dias</h2>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">3 itens</span>
+</div>
+<!-- Item 1: Aluguel do Apartamento -->
+<article class="bill-card bg-surface-container-lowest rounded-xl p-space-sm shadow-sm flex flex-col gap-space-sm transition-transform active:scale-[0.99]" data-id="1" data-status="pending">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-xl bg-error-container text-on-error-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">home</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-headline-sm text-[16px] leading-5 text-on-surface truncate">Aluguel do Apartamento</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span>Moradia</span>
+<span>•</span>
+<span class="text-error font-medium">Vence Hoje, 10 Nov</span>
+</p>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-amount-metric text-amount-metric text-on-surface">R$ 1.800,00</span>
+<span class="mt-1 px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm tracking-wide">
+              VENCE HOJE
+            </span>
+</div>
+</div>
+<!-- Action bar for quick settlement -->
+<div class="pt-space-xs flex items-center justify-between border-t border-surface-container-low">
+<div class="flex items-center gap-1.5 text-on-surface-variant text-body-sm">
+<span class="material-symbols-outlined text-[16px]">notifications_active</span>
+<span>Lembrete ativo</span>
+</div>
+<button class="px-3.5 h-9 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md flex items-center gap-1.5 shadow-sm active:scale-95 transition-all" onclick="markAsPaid(this, 'Aluguel do Apartamento', '1.800,00')">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Marcar Pago</span>
+</button>
+</div>
+</article>
+<!-- Item 2: Cartão de Crédito Nubank -->
+<article class="bill-card bg-surface-container-lowest rounded-xl p-space-sm shadow-sm flex flex-col gap-space-sm transition-transform active:scale-[0.99]" data-id="2" data-status="pending">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-xl bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">credit_card</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-headline-sm text-[16px] leading-5 text-on-surface truncate">Cartão Nubank</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span>Parcela 3/6</span>
+<span>•</span>
+<span>13 Nov (em 3 dias)</span>
+</p>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-amount-metric text-amount-metric text-on-surface">R$ 540,00</span>
+<span class="mt-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm tracking-wide">
+              PENDENTE
+            </span>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between border-t border-surface-container-low">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Fatura consolidada</span>
+<button class="px-3.5 h-9 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md flex items-center gap-1.5 active:scale-95 transition-all" onclick="markAsPaid(this, 'Cartão Nubank', '540,00')">
+<span class="material-symbols-outlined text-[18px]">check</span>
+<span>Marcar Pago</span>
+</button>
+</div>
+</article>
+<!-- Item 3: Internet Fibra Óptica -->
+<article class="bill-card bg-surface-container-lowest rounded-xl p-space-sm shadow-sm flex flex-col gap-space-sm transition-transform active:scale-[0.99]" data-id="3" data-status="pending">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-xl bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">wifi</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-headline-sm text-[16px] leading-5 text-on-surface truncate">Internet Fibra Óptica</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span>Serviços / Telecom</span>
+<span>•</span>
+<span>17 Nov (em 7 dias)</span>
+</p>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-amount-metric text-amount-metric text-on-surface">R$ 129,90</span>
+<span class="mt-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm tracking-wide">
+              PENDENTE
+            </span>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between border-t border-surface-container-low">
+<div class="flex items-center gap-1 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">qr_code_2</span>
+<span>Boleto disponível</span>
+</div>
+<button class="px-3.5 h-9 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md flex items-center gap-1.5 active:scale-95 transition-all" onclick="markAsPaid(this, 'Internet Fibra', '129,90')">
+<span class="material-symbols-outlined text-[18px]">check</span>
+<span>Marcar Pago</span>
+</button>
+</div>
+</article>
+</div>
+<!-- Group 2: Final do Mês -->
+<div class="bill-group flex flex-col gap-space-sm" data-category="fim-mes">
+<div class="flex items-center justify-between px-space-xs">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Final do Mês</h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">2 itens</span>
+</div>
+<!-- Item 4: Academia SmartFit -->
+<article class="bill-card bg-surface-container-lowest rounded-xl p-space-sm shadow-sm flex items-center justify-between gap-space-sm transition-transform active:scale-[0.99]" data-id="4" data-status="pending">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-xl bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">fitness_center</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-headline-sm text-[16px] leading-5 text-on-surface truncate">Academia SmartFit</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">
+              25 Nov • Saúde &amp; Lazer
+            </p>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-amount-metric text-amount-metric text-on-surface">R$ 110,00</span>
+<span class="mt-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm tracking-wide">
+            PENDENTE
+          </span>
+</div>
+</article>
+<!-- Item 5: Supermercado Mensal -->
+<article class="bill-card bg-surface-container-lowest rounded-xl p-space-sm shadow-sm flex items-center justify-between gap-space-sm transition-transform active:scale-[0.99]" data-id="5" data-status="pending">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-xl bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">shopping_cart</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<h3 class="font-headline-sm text-[16px] leading-5 text-on-surface truncate">Supermercado Mensal</h3>
+<span class="px-1.5 py-0.2 rounded bg-surface-container font-label-sm text-[10px] text-on-surface-variant">Estimativa</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">
+              28 Nov • Alimentação
+            </p>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-amount-metric text-amount-metric text-on-surface">R$ 600,00</span>
+<span class="mt-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm tracking-wide">
+            PENDENTE
+          </span>
+</div>
+</article>
+</div>
+<!-- Group 3: Já Pagas este Mês -->
+<div class="bill-group flex flex-col gap-space-sm" data-category="pagas-bloco">
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Já Pagas este Mês</h2>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-medium">3 quitadas</span>
+</div>
+<!-- Item 6: Conta de Luz (Enel) -->
+<article class="bill-card bg-surface-container-lowest/80 rounded-xl p-space-sm shadow-sm flex items-center justify-between gap-space-sm" data-id="6" data-status="paid">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-xl bg-secondary-container/40 text-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">bolt</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-headline-sm text-[16px] leading-5 text-on-surface truncate line-through opacity-75">Conta de Luz (Enel)</h3>
+<p class="font-body-sm text-body-sm text-secondary flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[14px]">check</span>
+<span>Pago dia 05 Nov</span>
+</p>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-amount-metric text-amount-metric text-on-surface-variant">R$ 180,00</span>
+<span class="mt-1 px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold tracking-wide">
+            PAGO
+          </span>
+</div>
+</article>
+<!-- Item 7: Condomínio Residencial -->
+<article class="bill-card bg-surface-container-lowest/80 rounded-xl p-space-sm shadow-sm flex items-center justify-between gap-space-sm" data-id="7" data-status="paid">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-xl bg-secondary-container/40 text-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">apartment</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-headline-sm text-[16px] leading-5 text-on-surface truncate line-through opacity-75">Condomínio Residencial</h3>
+<p class="font-body-sm text-body-sm text-secondary flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[14px]">check</span>
+<span>Pago dia 03 Nov</span>
+</p>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-amount-metric text-amount-metric text-on-surface-variant">R$ 450,00</span>
+<span class="mt-1 px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold tracking-wide">
+            PAGO
+          </span>
+</div>
+</article>
+<!-- Item 8: Assinatura Streaming -->
+<article class="bill-card bg-surface-container-lowest/80 rounded-xl p-space-sm shadow-sm flex items-center justify-between gap-space-sm" data-id="8" data-status="paid">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-xl bg-secondary-container/40 text-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">play_circle</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-headline-sm text-[16px] leading-5 text-on-surface truncate line-through opacity-75">Assinatura Streaming</h3>
+<p class="font-body-sm text-body-sm text-secondary flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[14px]">check</span>
+<span>Pago dia 02 Nov</span>
+</p>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-amount-metric text-amount-metric text-on-surface-variant">R$ 49,90</span>
+<span class="mt-1 px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold tracking-wide">
+            PAGO
+          </span>
+</div>
+</article>
+</div>
+<!-- Empty State Container (Hidden by default, shown on empty search or filter) -->
+<div class="hidden flex-col items-center justify-center py-space-xl text-center" id="empty-state">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant mb-space-sm">
+<span class="material-symbols-outlined text-[32px]">savings</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Nenhuma conta encontrada</h3>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xs">Não encontramos compromissos para o filtro ou termo pesquisado.</p>
+</div>
+</main>
+<!-- Sticky Bottom Summary Floating Banner (Above Bottom App Shell Bar) -->
+<aside class="sticky bottom-2 mx-margin z-30 mt-space-md">
+<div class="w-full bg-inverse-surface/95 text-inverse-on-surface backdrop-blur-md rounded-2xl p-space-sm px-space-md shadow-xl flex items-center justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-full bg-secondary text-on-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-inverse-on-surface/80 uppercase tracking-wider" id="footer-count">Filtro Atual</span>
+<span class="font-amount-metric text-[15px] leading-tight text-inverse-on-surface truncate" id="footer-text">
+            5 contas a pagar somam <strong class="text-secondary-fixed">R$ 2.580,00</strong>
+</span>
+</div>
+</div>
+<button aria-label="Subir ao topo" class="w-8 h-8 rounded-full bg-inverse-surface hover:bg-surface-variant/20 flex items-center justify-center text-inverse-on-surface/90 transition-colors" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+<span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+</button>
+</div>
+</aside>
+<!-- Delight Celebration Toast Micro-interaction -->
+<div class="fixed top-20 inset-x-4 z-50 pointer-events-none transition-all duration-300 transform -translate-y-6 opacity-0 flex justify-center" id="toast">
+<div class="bg-primary text-on-primary px-space-md py- space-sm rounded-xl shadow-2xl flex items-center gap-space-xs font-label-md text-label-md">
+<span class="material-symbols-outlined text-secondary-fixed text-[20px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span id="toast-message">Conta marcada como paga com sucesso!</span>
+</div>
+</div>
+</div>
+<script>
+  // Filter Tabs Switcher
+  const tabs = document.querySelectorAll('.filter-tab');
+  const cards = document.querySelectorAll('.bill-card');
+  const groups = document.querySelectorAll('.bill-group');
+  const emptyState = document.getElementById('empty-state');
+  const footerText = document.getElementById('footer-text');
+  const footerCount = document.getElementById('footer-count');
+  const searchInput = document.getElementById('bill-search');
+
+  let activeFilter = 'todas';
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => {
+        t.className = 'filter-tab px-4 h-9 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-all';
+      });
+      tab.className = 'filter-tab px-4 h-9 rounded-full bg-primary text-on-primary font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-all';
+      activeFilter = tab.getAttribute('data-filter');
+      applyFilters();
+    });
+  });
+
+  searchInput.addEventListener('input', applyFilters);
+
+  function applyFilters() {
+    const query = searchInput.value.toLowerCase().trim();
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const status = card.getAttribute('data-status');
+      const text = card.textContent.toLowerCase();
+      let matchFilter = false;
+
+      if (activeFilter === 'todas') matchFilter = true;
+      else if (activeFilter === 'a-pagar' && status === 'pending') matchFilter = true;
+      else if (activeFilter === 'pagas' && status === 'paid') matchFilter = true;
+      else if (activeFilter === 'atrasadas') matchFilter = false;
+
+      const matchSearch = text.includes(query);
+
+      if (matchFilter && matchSearch) {
+        card.classList.remove('hidden');
+        visibleCount++;
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+
+    // Toggle group headers visibility
+    groups.forEach(group => {
+      const visibleChildCards = group.querySelectorAll('.bill-card:not(.hidden)');
+      if (visibleChildCards.length === 0) {
+        group.classList.add('hidden');
+      } else {
+        group.classList.remove('hidden');
+      }
+    });
+
+    if (visibleCount === 0) {
+      emptyState.classList.remove('hidden');
+      emptyState.classList.add('flex');
+    } else {
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
+    }
+
+    // Dynamic Footer update
+    if (activeFilter === 'pagas') {
+      footerCount.textContent = 'Filtro: Pagas';
+      footerText.innerHTML = '3 contas já quitadas (R$ 679,90)';
+    } else if (activeFilter === 'atrasadas') {
+      footerCount.textContent = 'Filtro: Atrasadas';
+      footerText.innerHTML = 'Tudo em dia! Nenhuma pendência em atraso.';
+    } else {
+      footerCount.textContent = 'Filtro Atual';
+      footerText.innerHTML = '5 contas a pagar somam <strong class="text-secondary-fixed">R$ 2.580,00</strong>';
+    }
+  }
+
+  // Quick Payment micro-action
+  window.markAsPaid = function(button, billName, amount) {
+    const card = button.closest('.bill-card');
+    card.setAttribute('data-status', 'paid');
+    
+    // Animate button feedback
+    button.disabled = true;
+    button.classList.add('bg-secondary', 'text-on-secondary');
+    button.innerHTML = '<span class="material-symbols-outlined text-[18px]">done_all</span><span>Pago!</span>';
+
+    // Toast feedback
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+    toastMessage.textContent = `${billName} (R$ ${amount}) foi liquidada!`;
+    
+    toast.classList.remove('-translate-y-6', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+
+    setTimeout(() => {
+      toast.classList.add('-translate-y-6', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 2800);
+  };
+</script></main><nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-4px_16px_rgba(0,0,0,0.04)]" data-active-classes="text-primary font-semibold"><div class="flex items-center justify-around h-16 px-space-xs max-w-md mx-auto"><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="inicio" href="#"><span class="material-symbols-outlined text-[24px]">dashboard</span><span class="font-label-sm text-label-sm mt-0.5">Início</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-1 transition-colors text-primary font-semibold" data-path="contas" href="#"><span class="material-symbols-outlined text-[24px]">receipt_long</span><span class="font-label-sm text-label-sm mt-0.5">Contas</span></a><div class="flex items-center justify-center min-w-[56px] min-h-[44px]"><a class="-mt-5 w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg active:scale-95 transition-transform" data-path="nova-conta" href="#"><span class="material-symbols-outlined text-[26px]">add</span></a></div><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="planejamento" href="#"><span class="material-symbols-outlined text-[24px]">account_balance_wallet</span><span class="font-label-sm text-label-sm mt-0.5">Planejamento</span></a></div></nav></body></html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "error": "#ba1a1a", "on-tertiary-fixed-variant": "#653e00", "tertiary-fixed-dim": "#ffb95f", "secondary": "#006c49", "surface-variant": "#e0e3e5", "tertiary": "#000000", "surface-tint": "#565e74", "tertiary-container": "#2a1700", "inverse-surface": "#2d3133", "on-secondary-container": "#00714d", "outline": "#76777d", "on-surface-variant": "#45464d", "primary": "#000000", "error-container": "#ffdad6", "outline-variant": "#c6c6cd", "surface-container-highest": "#e0e3e5", "inverse-primary": "#bec6e0", "on-tertiary-container": "#b87500", "inverse-on-surface": "#eff1f3", "on-surface": "#191c1e", "on-secondary-fixed-variant": "#005236", "surface-container": "#eceef0", "primary-container": "#131b2e", "on-primary": "#ffffff", "on-error-container": "#93000a", "surface-dim": "#d8dadc", "on-tertiary": "#ffffff", "primary-fixed-dim": "#bec6e0", "on-primary-fixed-variant": "#3f465c", "on-primary-fixed": "#131b2e", "primary-fixed": "#dae2fd", "surface-container-low": "#f2f4f6", "on-background": "#191c1e", "on-secondary": "#ffffff", "secondary-fixed-dim": "#4edea3", "on-error": "#ffffff", "on-tertiary-fixed": "#2a1700", "tertiary-fixed": "#ffddb8", "background": "#f7f9fb", "on-primary-container": "#7c839b", "secondary-fixed": "#6ffbbe", "surface-container-lowest": "#ffffff", "surface": "#f7f9fb", "surface-container-high": "#e6e8ea", "on-secondary-fixed": "#002113", "surface-bright": "#f7f9fb", "secondary-container": "#6cf8bb" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-tablet": "1.5rem", "margin-desktop": "2rem", "space-md": "1rem", "gutter": "1rem", "space-xl": "2rem", "margin": "1rem", "gutter-sm": "0.75rem", "space-sm": "0.5rem", "space-lg": "1.5rem", "space-xs": "0.25rem" }, fontFamily: { "display-currency": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "display-currency-mobile": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "amount-metric": ["Plus Jakarta Sans"], "label-md": ["Inter"], "body-sm": ["Inter"], "label-sm": ["Inter"], "body-md": ["Inter"] }, fontSize: { "display-currency": ["36px", { lineHeight: "44px", letterSpacing: "-0.03em", fontWeight: "700" }], "headline-lg": ["28px", { lineHeight: "34px", letterSpacing: "-0.02em", fontWeight: "700" }], "display-currency-mobile": ["30px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-lg": ["16px", { lineHeight: "24px", letterSpacing: "-0.005em", fontWeight: "400" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.015em", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "600" }], "amount-metric": ["16px", { lineHeight: "20px", letterSpacing: "-0.01em", fontWeight: "600" }], "label-md": ["13px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["12px", { lineHeight: "16px", letterSpacing: "0em", fontWeight: "400" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-space-sm flex items-center justify-between"><div class="flex items-center gap-space-xs"><button aria-label="Voltar" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container active:bg-surface-container-high transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><img alt="ContaFácil Logo" class="h-7 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UkYlhUVyxLHMvIg2A0fMqW7ji4xmImkZwaIdDzrd2yF4QFo4lpdrcoycOdhx7QDpeO-Kys6w0e8QHbWDqjKRuHTItHVapgy72br-WeGUyV8l-nFs3wG5vhCwFBxOiuNVGzUWHcP76CNsqIAtAd_cebBnVzVYCSphW6zzOdVbQcohTdXQar7Fn91r5tsGComBLeLx8qteu1s0XN4kokvAXYaoj_cTVjnaWcl_546GyuxLmf1me63F5y4SID"/><h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Nova Conta</h1></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 bg-surface"><div class="flex flex-col w-full pb-safe">
+<!-- Content Area Form -->
+<div class="px-margin flex flex-col gap-space-lg pt-space-md pb-28">
+<!-- Header Badge / Subtitle -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Lançamento de Despesa</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-space-xs py-0.5 rounded-full">Passo 1 de 2</span>
+</div>
+<!-- Type Selector Toggle Pills -->
+<div class="grid grid-cols-2 p-1 bg-surface-container-high rounded-xl gap-1">
+<button class="w-full py-2.5 px-space-sm rounded-lg bg-surface-container-lowest shadow-sm text-on-surface font-headline-sm text-label-md flex items-center justify-center gap-1.5 transition-all" id="tab-parcelada" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">view_timeline</span>
+<span>Parcelada / Variável</span>
+</button>
+<button class="w-full py-2.5 px-space-sm rounded-lg text-on-surface-variant font-headline-sm text-label-md flex items-center justify-center gap-1.5 hover:text-on-surface transition-all" id="tab-fixa" type="button">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+<span>Despesa Fixa</span>
+</button>
+</div>
+<!-- Amount Hero Input Card (Fintech Modern) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col items-center justify-center text-center relative overflow-hidden">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-surface-container-low rounded-full pointer-events-none"></div>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-space-xs">Valor da Conta</span>
+<div class="flex items-baseline justify-center gap-1.5 my-space-xs w-full">
+<span class="font-headline-md text-headline-md text-on-surface-variant">R$</span>
+<input class="font-display-currency-mobile text-display-currency-mobile text-on-surface text-center bg-transparent border-0 outline-none w-48 focus:w-56 transition-all font-bold placeholder:text-surface-variant" id="amount-input" inputmode="decimal" placeholder="0,00" type="text" value="240,00"/>
+</div>
+<div class="flex items-center gap-1.5 text-secondary font-label-sm text-label-sm bg-secondary-container/40 px-2.5 py-1 rounded-full mt-space-xs">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+<span>Impacto mensal no orçamento</span>
+</div>
+</div>
+<!-- Main Form Fields -->
+<div class="flex flex-col gap-space-md">
+<!-- Descrição da Conta -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between" for="bill-name">
+<span>Descrição / Nome da Conta</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-normal">Obrigatório</span>
+</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-[20px] pointer-events-none">edit_note</span>
+<input class="w-full h-12 pl-11 pr-space-md bg-surface-container-lowest rounded-lg font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 shadow-sm focus:outline-none focus:bg-surface-container-lowest" id="bill-name" placeholder="Ex: Aluguel, Celular, Cartão..." type="text" value="Plano de Saúde Familiar"/>
+</div>
+</div>
+<!-- Data de Vencimento -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold" for="due-date">Data de Vencimento</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-[20px] pointer-events-none">calendar_month</span>
+<input class="w-full h-12 pl-11 pr-space-md bg-surface-container-lowest rounded-lg font-body-md text-body-md text-on-surface shadow-sm focus:outline-none" id="due-date" type="text" value="15/11/2024"/>
+</div>
+<!-- Quick Shortcuts Chips -->
+<div class="flex items-center gap-1.5 pt-1 overflow-x-auto">
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-label-sm font-label-sm hover:bg-surface-container-high transition-colors shrink-0" onclick="setDateShortcut('Hoje')" type="button">Hoje</button>
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-label-sm font-label-sm hover:bg-surface-container-high transition-colors shrink-0" onclick="setDateShortcut('Amanhã')" type="button">Amanhã</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface text-label-sm font-label-sm hover:bg-surface-container-high transition-colors shrink-0 flex items-center gap-1" onclick="setDateShortcut('Próximo dia 10')" type="button">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+<span>Próximo dia 10</span>
+</button>
+</div>
+</div>
+<!-- Categoria Selector -->
+<div class="flex flex-col gap-2 pt-1">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Categoria</label>
+<span class="font-label-sm text-label-sm text-secondary font-semibold" id="selected-cat-name">Saúde</span>
+</div>
+<!-- Horizontal scrollable icons -->
+<div class="flex gap-space-sm overflow-x-auto pb-1.5 pt-0.5">
+<!-- Moradia -->
+<button class="cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[70px] text-on-surface-variant hover:text-on-surface transition-all" onclick="selectCategory('Moradia')" type="button">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[20px]">home</span>
+</div>
+<span class="font-body-sm text-body-sm">Moradia</span>
+</button>
+<!-- Alimentação -->
+<button class="cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[70px] text-on-surface-variant hover:text-on-surface transition-all" onclick="selectCategory('Alimentação')" type="button">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[20px]">restaurant</span>
+</div>
+<span class="font-body-sm text-body-sm">Alimentação</span>
+</button>
+<!-- Saúde (Selected) -->
+<button class="cat-pill selected flex flex-col items-center gap-1 p-2 rounded-xl bg-primary text-on-primary shadow-sm min-w-[70px] transition-all" onclick="selectCategory('Saúde')" type="button">
+<div class="w-10 h-10 rounded-full bg-surface-container-lowest/20 flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[20px]">medical_services</span>
+</div>
+<span class="font-body-sm text-body-sm font-semibold">Saúde</span>
+</button>
+<!-- Cartão -->
+<button class="cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[70px] text-on-surface-variant hover:text-on-surface transition-all" onclick="selectCategory('Cartão de Crédito')" type="button">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[20px]">credit_card</span>
+</div>
+<span class="font-body-sm text-body-sm">Cartão</span>
+</button>
+<!-- Transporte -->
+<button class="cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[70px] text-on-surface-variant hover:text-on-surface transition-all" onclick="selectCategory('Transporte')" type="button">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[20px]">directions_car</span>
+</div>
+<span class="font-body-sm text-body-sm">Transporte</span>
+</button>
+<!-- Educação -->
+<button class="cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[70px] text-on-surface-variant hover:text-on-surface transition-all" onclick="selectCategory('Educação')" type="button">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[20px]">school</span>
+</div>
+<span class="font-body-sm text-body-sm">Educação</span>
+</button>
+</div>
+</div>
+<!-- Smart Recurrence Section -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-md">
+<!-- Toggle Switch Row -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">update</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">Repetir nos Próximos Meses</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Lançamento automático recorrente</span>
+</div>
+</div>
+<!-- Switch Element -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="recurrence-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-surface-container-lowest after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+</label>
+</div>
+<!-- Recurrence Options (Visible when toggled) -->
+<div class="flex flex-col gap-space-md pt-2" id="recurrence-panel">
+<!-- Radio Selectors -->
+<div class="flex flex-col gap-2">
+<!-- Radio 1: Parcelada -->
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low cursor-pointer transition-colors hover:bg-surface-container">
+<input checked="" class="mt-1 accent-primary h-4 w-4" name="recurrence_mode" type="radio" value="parcelada"/>
+<div class="flex-1 flex flex-col">
+<span class="font-headline-sm text-body-md text-on-surface font-semibold">Parcelada (x vezes)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Quantidade finita de parcelas mensais</span>
+</div>
+</label>
+<!-- Radio 2: Fixa Contínua -->
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-lowest hover:bg-surface-container-low cursor-pointer transition-colors">
+<input class="mt-1 accent-primary h-4 w-4" name="recurrence_mode" type="radio" value="fixa"/>
+<div class="flex-1 flex flex-col">
+<span class="font-headline-sm text-body-md text-on-surface font-semibold">Fixa todo mês</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Repete continuamente até ser cancelada</span>
+</div>
+</label>
+</div>
+<!-- Sub Inputs for Parcelada -->
+<div class="grid grid-cols-2 gap-space-sm">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Nº de Parcelas</span>
+<div class="h-11 px-3 bg-surface-container rounded-lg flex items-center justify-between">
+<input class="w-12 bg-transparent text-on-surface font-headline-sm text-headline-sm outline-none" id="installments-count" max="72" min="2" type="number" value="6"/>
+<span class="font-body-sm text-body-sm text-on-surface-variant">vezes</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Mês de Início</span>
+<div class="h-11 px-3 bg-surface-container rounded-lg flex items-center justify-between">
+<span class="font-body-md text-body-md text-on-surface font-semibold">Nov/2024</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">event</span>
+</div>
+</div>
+</div>
+<!-- Visual Projection Preview Card -->
+<div class="p-space-sm rounded-lg bg-secondary-container/20 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5">verified</span>
+<div class="flex flex-col gap-0.5">
+<span class="font-headline-sm text-label-md text-secondary font-semibold">Projeção Inteligente</span>
+<p class="font-body-sm text-body-sm text-on-surface" id="preview-text">
+                Essa conta será automaticamente lançada de <strong>Novembro/24</strong> até <strong>Abril/25</strong> no valor de <strong>R$ 240,00</strong> ao mês.
+              </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Lembrete de Vencimento -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[20px]">notifications_active</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-body-md text-on-surface font-semibold">Lembrete de Vencimento</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Notificar no celular 1 dia antes</span>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:bg-secondary peer-checked:after:translate-x-full peer-checked:after:border-surface-container-lowest after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- Sticky Bottom Ergonomic Action Bar -->
+<div class="fixed bottom-0 inset-x-0 bg-surface-container-lowest/90 backdrop-blur-xl p-space-md pb-safe flex flex-col gap-2 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] z-40">
+<button class="w-full h-12 bg-primary text-on-primary rounded-lg font-headline-sm text-body-lg font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition-transform" id="btn-save" onclick="handleSaveBill()" type="button">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+<span>Salvar Conta</span>
+</button>
+<button class="w-full h-10 bg-transparent text-on-surface-variant hover:text-on-surface rounded-lg font-headline-sm text-label-md transition-colors" onclick="history.back()" type="button">
+      Cancelar
+    </button>
+</div>
+<!-- Toast Feedback Modal Placeholder -->
+<div class="fixed top-20 inset-x-4 bg-primary text-on-primary p-space-md rounded-xl shadow-xl flex items-center justify-between z-50 transform -translate-y-24 opacity-0 transition-all duration-300 pointer-events-none" id="success-toast">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">done</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-label-md text-on-primary font-bold">Conta adicionada com sucesso!</span>
+<span class="font-body-sm text-body-sm text-on-primary-container">6 parcelas projetadas no fluxo.</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-primary-container text-[20px]">close</span>
+</div>
+</div>
+<script>
+  function selectCategory(categoryName) {
+    const label = document.getElementById('selected-cat-name');
+    if (label) label.textContent = categoryName;
+
+    const pills = document.querySelectorAll('.cat-pill');
+    pills.forEach(pill => {
+      const isSelected = pill.innerText.includes(categoryName);
+      if (isSelected) {
+        pill.className = 'cat-pill selected flex flex-col items-center gap-1 p-2 rounded-xl bg-primary text-on-primary shadow-sm min-w-[70px] transition-all';
+        const iconDiv = pill.querySelector('div');
+        if (iconDiv) iconDiv.className = 'w-10 h-10 rounded-full bg-surface-container-lowest/20 flex items-center justify-center text-on-primary';
+      } else {
+        pill.className = 'cat-pill flex flex-col items-center gap-1 p-2 rounded-xl bg-surface-container-lowest shadow-sm min-w-[70px] text-on-surface-variant hover:text-on-surface transition-all';
+        const iconDiv = pill.querySelector('div');
+        if (iconDiv) iconDiv.className = 'w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface';
+      }
+    });
+  }
+
+  function setDateShortcut(text) {
+    const dateInput = document.getElementById('due-date');
+    if (!dateInput) return;
+    if (text === 'Hoje') {
+      dateInput.value = '10/11/2024';
+    } else if (text === 'Amanhã') {
+      dateInput.value = '11/11/2024';
+    } else {
+      dateInput.value = '10/12/2024';
+    }
+  }
+
+  // Handle Switch Recurrence
+  const toggle = document.getElementById('recurrence-toggle');
+  const panel = document.getElementById('recurrence-panel');
+  if (toggle && panel) {
+    toggle.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        panel.style.display = 'flex';
+      } else {
+        panel.style.display = 'none';
+      }
+    });
+  }
+
+  // Handle Type Pills Toggle
+  const tabParcelada = document.getElementById('tab-parcelada');
+  const tabFixa = document.getElementById('tab-fixa');
+  if (tabParcelada && tabFixa) {
+    tabParcelada.addEventListener('click', () => {
+      tabParcelada.className = 'w-full py-2.5 px-space-sm rounded-lg bg-surface-container-lowest shadow-sm text-on-surface font-headline-sm text-label-md flex items-center justify-center gap-1.5 transition-all';
+      tabFixa.className = 'w-full py-2.5 px-space-sm rounded-lg text-on-surface-variant font-headline-sm text-label-md flex items-center justify-center gap-1.5 hover:text-on-surface transition-all';
+    });
+    tabFixa.addEventListener('click', () => {
+      tabFixa.className = 'w-full py-2.5 px-space-sm rounded-lg bg-surface-container-lowest shadow-sm text-on-surface font-headline-sm text-label-md flex items-center justify-center gap-1.5 transition-all';
+      tabParcelada.className = 'w-full py-2.5 px-space-sm rounded-lg text-on-surface-variant font-headline-sm text-label-md flex items-center justify-center gap-1.5 hover:text-on-surface transition-all';
+    });
+  }
+
+  // Save Toast Feedback Trigger
+  function handleSaveBill() {
+    const toast = document.getElementById('success-toast');
+    if (toast) {
+      toast.classList.remove('-translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.add('-translate-y-24', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 3000);
+    }
+  }
+</script></main></body></html>

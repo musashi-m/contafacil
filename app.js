@@ -411,6 +411,62 @@ function parseDateBR(dateBR) {
   return dateBR;
 }
 
+// Retorna a data por extenso formatada (ex: "01 de Outubro de 2026")
+function formatDateFullBR(dateStr) {
+  if (!dateStr || dateStr === 'sem-data') return 'Sem Data Definida';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const day = parts[2].padStart(2, '0');
+    const monthIndex = parseInt(parts[1], 10) - 1;
+    const monthName = MONTH_NAMES[monthIndex] || parts[1];
+    const year = parts[0];
+    return `${day} de ${monthName} de ${year}`;
+  }
+  return dateStr;
+}
+
+// Renderiza o separador de seção por dia com traços e data elegante
+function renderDateSectionHeader(dateStr) {
+  const formattedDate = formatDateFullBR(dateStr);
+  
+  let relativeBadge = '';
+  let dayOfWeekStr = '';
+
+  if (dateStr && dateStr !== 'sem-data') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const targetDate = new Date(y, m - 1, d);
+    targetDate.setHours(0, 0, 0, 0);
+
+    const daysOfWeek = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    dayOfWeekStr = daysOfWeek[targetDate.getDay()] || '';
+
+    const diffDays = Math.round((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) {
+      relativeBadge = `<span class="px-1.5 py-0.2 rounded-full bg-primary/15 text-primary font-label-sm text-[9px] font-bold">Hoje</span>`;
+    } else if (diffDays === 1) {
+      relativeBadge = `<span class="px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 font-label-sm text-[9px] font-bold">Amanhã</span>`;
+    } else if (diffDays === -1) {
+      relativeBadge = `<span class="px-1.5 py-0.2 rounded-full bg-error/15 text-error font-label-sm text-[9px] font-bold">Ontem</span>`;
+    }
+  }
+
+  return `
+    <div class="day-section-divider flex items-center gap-2 my-2.5 pt-1.5">
+      <div class="h-[1px] bg-surface-container-high dark:bg-outline-variant/30 flex-1"></div>
+      <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low dark:bg-surface-container border border-surface-container-high text-on-surface shadow-2xs shrink-0">
+        <span class="material-symbols-outlined text-[13px] text-primary">calendar_today</span>
+        <span class="font-headline-sm text-[11px] font-semibold tracking-tight text-on-surface">${escapeHtml(formattedDate)}</span>
+        ${dayOfWeekStr ? `<span class="font-body-sm text-[10px] text-on-surface-variant opacity-80 hidden sm:inline">• ${dayOfWeekStr}</span>` : ''}
+        ${relativeBadge}
+      </div>
+      <div class="h-[1px] bg-surface-container-high dark:bg-outline-variant/30 flex-1"></div>
+    </div>
+  `;
+}
+
+
 function getCategoryInfo(categoryId, nature = 'despesa') {
   const match = CATEGORIES.find(c => c.id === categoryId);
   if (match) return match;
@@ -1121,107 +1177,136 @@ function renderHomeUpcomingBills(bills) {
 
   if (emptyState) emptyState.classList.add('hidden');
 
-  // Ordenar por vencimento
-  const sorted = [...filtered].sort((a, b) => {
-    if (a.status === 'paid' && b.status !== 'paid') return 1;
-    if (a.status !== 'paid' && b.status === 'paid') return -1;
-    return a.dueDate.localeCompare(b.dueDate);
+  // Agrupar por data de vencimento (dueDate)
+  const groupsByDate = {};
+  filtered.forEach(bill => {
+    const dKey = bill.dueDate || 'sem-data';
+    if (!groupsByDate[dKey]) {
+      groupsByDate[dKey] = [];
+    }
+    groupsByDate[dKey].push(bill);
   });
 
-  listContainer.innerHTML = sorted.map(bill => {
-    const isReceita = bill.nature === 'receita';
-    const cat = getCategoryInfo(bill.category, bill.nature);
-    const dueInfo = getBillDueInfo(bill.dueDate, bill.status, bill.nature);
-    const isPaid = bill.status === 'paid';
-    const isReserved = bill.status === 'reserved';
+  // Ordenar datas em ordem decrescente (mais recente no topo, mais antigo embaixo)
+  const sortedDates = Object.keys(groupsByDate).sort((a, b) => {
+    if (a === 'sem-data') return 1;
+    if (b === 'sem-data') return -1;
+    return b.localeCompare(a);
+  });
 
-    const amountColor = isReceita ? 'text-secondary' : 'text-on-surface';
-    const amountSign = isReceita ? '+' : '-';
-
-    let actionButtonsHtml = '';
-
-    if (isReceita) {
-      if (isPaid) {
-        actionButtonsHtml = `
-          <button onclick="toggleBillPayment('${bill.id}')" class="pay-btn px-2.5 py-1 rounded-lg bg-secondary text-on-secondary font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Recebido</span>
-          </button>
-        `;
-      } else {
-        actionButtonsHtml = `
-          <button onclick="toggleBillPayment('${bill.id}')" class="pay-btn px-2.5 py-1 rounded-lg bg-secondary text-on-secondary hover:opacity-90 font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
-            Receber
-          </button>
-        `;
-      }
-    } else {
-      if (isPaid) {
-        actionButtonsHtml = `
-          <button onclick="toggleBillPayment('${bill.id}')" class="pay-btn px-2.5 py-1 rounded-lg bg-secondary text-on-secondary font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Pago</span>
-          </button>
-        `;
-      } else if (isReserved) {
-        actionButtonsHtml = `
-          <div class="flex items-center gap-1">
-            <button onclick="toggleBillReserved('${bill.id}')" title="Desfazer reserva deste dinheiro" class="px-2 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-[10px] font-medium transition-all active:scale-95">
-              Desfazer
-            </button>
-            <button onclick="toggleBillPayment('${bill.id}')" title="Liquidar e marcar como paga" class="pay-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary hover:opacity-90 font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
-              Pagar
-            </button>
-          </div>
-        `;
-      } else {
-        actionButtonsHtml = `
-          <div class="flex items-center gap-1">
-            <button onclick="toggleBillReserved('${bill.id}')" title="Reservar dinheiro na conta para pagar esta conta" class="px-2 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 font-label-sm text-[10px] font-semibold border border-sky-400/30 flex items-center gap-0.5 transition-all active:scale-95">
-              <span class="material-symbols-outlined text-[12px]">lock</span>
-              <span>Reservar</span>
-            </button>
-            <button onclick="toggleBillPayment('${bill.id}')" title="Pagar diretamente" class="pay-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary hover:opacity-90 font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
-              Pagar
-            </button>
-          </div>
-        `;
-      }
-    }
-
-    const cardHighlight = isReserved ? 'border-l-4 border-l-sky-500 bg-sky-500/[0.03] dark:bg-sky-950/20' : '';
+  listContainer.innerHTML = sortedDates.map(dateKey => {
+    const dayBills = groupsByDate[dateKey];
+    // Dentro do mesmo dia: não pagos primeiro ou por nome
+    dayBills.sort((a, b) => {
+      if (a.status === 'paid' && b.status !== 'paid') return 1;
+      if (a.status !== 'paid' && b.status === 'paid') return -1;
+      return (a.name || '').localeCompare(b.name || '');
+    });
 
     return `
-      <div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex items-center justify-between gap-2.5 transition-transform active:scale-[0.99] border border-surface-container-low ${cardHighlight} ${isPaid ? 'opacity-75' : ''}">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <div class="w-10 h-10 rounded-xl ${cat.bg} flex items-center justify-center shrink-0 shadow-sm">
-            <span class="material-symbols-outlined text-[20px]">${cat.icon}</span>
-          </div>
-          <div class="flex flex-col min-w-0">
-            <div class="flex items-center gap-1.5">
-              <span class="font-body-md text-[13px] font-semibold text-on-surface truncate ${isPaid ? 'line-through decoration-outline/60' : ''}">
-                ${escapeHtml(bill.name)}
-              </span>
-              <span class="px-1.5 py-0.2 rounded-full font-label-sm text-[9px] font-semibold ${isReceita ? 'bg-secondary/15 text-secondary' : (isReserved ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300' : 'bg-error-container/30 text-error')}">
-                ${isReceita ? 'Receita' : (isReserved ? '🔒 Reservada' : 'Despesa')}
-              </span>
-            </div>
-            <div class="flex items-center gap-1 mt-0.5">
-              <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full ${dueInfo.badgeClass} font-label-sm text-[10px]">
-                ${dueInfo.isDueToday ? '<span class="material-symbols-outlined text-[11px]">alarm</span>' : ''}
-                ${dueInfo.text}
-              </span>
-              <span class="text-on-surface-variant font-body-sm text-[11px] truncate">• ${escapeHtml(bill.category || (isReceita ? 'Entradas' : 'Moradia'))}</span>
-            </div>
-          </div>
-        </div>
-        <div class="flex flex-col items-end shrink-0 gap-1">
-          <span class="font-amount-metric text-[14px] ${amountColor} font-bold tabular-nums ${isPaid ? 'line-through text-on-surface-variant' : ''}">
-            ${amountSign} ${formatCurrency(bill.amount)}
-          </span>
-          ${actionButtonsHtml}
+      <div class="day-group flex flex-col gap-1.5">
+        ${renderDateSectionHeader(dateKey)}
+        <div class="flex flex-col gap-2">
+          ${dayBills.map(bill => renderHomeBillCard(bill)).join('')}
         </div>
       </div>
     `;
   }).join('');
+}
+
+function renderHomeBillCard(bill) {
+  const isReceita = bill.nature === 'receita';
+  const cat = getCategoryInfo(bill.category, bill.nature);
+  const dueInfo = getBillDueInfo(bill.dueDate, bill.status, bill.nature);
+  const isPaid = bill.status === 'paid';
+  const isReserved = bill.status === 'reserved';
+
+  const amountColor = isReceita ? 'text-secondary' : 'text-on-surface';
+  const amountSign = isReceita ? '+' : '-';
+
+  let actionButtonsHtml = '';
+
+  if (isReceita) {
+    if (isPaid) {
+      actionButtonsHtml = `
+        <button onclick="toggleBillPayment('${bill.id}')" class="pay-btn px-2.5 py-1 rounded-lg bg-secondary text-on-secondary font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
+          <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Recebido</span>
+        </button>
+      `;
+    } else {
+      actionButtonsHtml = `
+        <button onclick="toggleBillPayment('${bill.id}')" class="pay-btn px-2.5 py-1 rounded-lg bg-secondary text-on-secondary hover:opacity-90 font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
+          Receber
+        </button>
+      `;
+    }
+  } else {
+    if (isPaid) {
+      actionButtonsHtml = `
+        <button onclick="toggleBillPayment('${bill.id}')" class="pay-btn px-2.5 py-1 rounded-lg bg-secondary text-on-secondary font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
+          <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Pago</span>
+        </button>
+      `;
+    } else if (isReserved) {
+      actionButtonsHtml = `
+        <div class="flex items-center gap-1">
+          <button onclick="toggleBillReserved('${bill.id}')" title="Desfazer reserva deste dinheiro" class="px-2 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-[10px] font-medium transition-all active:scale-95">
+            Desfazer
+          </button>
+          <button onclick="toggleBillPayment('${bill.id}')" title="Liquidar e marcar como paga" class="pay-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary hover:opacity-90 font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
+            Pagar
+          </button>
+        </div>
+      `;
+    } else {
+      actionButtonsHtml = `
+        <div class="flex items-center gap-1">
+          <button onclick="toggleBillReserved('${bill.id}')" title="Reservar dinheiro na conta para pagar esta conta" class="px-2 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 font-label-sm text-[10px] font-semibold border border-sky-400/30 flex items-center gap-0.5 transition-all active:scale-95">
+            <span class="material-symbols-outlined text-[12px]">lock</span>
+            <span>Reservar</span>
+          </button>
+          <button onclick="toggleBillPayment('${bill.id}')" title="Pagar diretamente" class="pay-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary hover:opacity-90 font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
+            Pagar
+          </button>
+        </div>
+      `;
+    }
+  }
+
+  const cardHighlight = isReserved ? 'border-l-4 border-l-sky-500 bg-sky-500/[0.03] dark:bg-sky-950/20' : '';
+
+  return `
+    <div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex items-center justify-between gap-2.5 transition-transform active:scale-[0.99] border border-surface-container-low ${cardHighlight} ${isPaid ? 'opacity-75' : ''}">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-10 h-10 rounded-xl ${cat.bg} flex items-center justify-center shrink-0 shadow-sm">
+          <span class="material-symbols-outlined text-[20px]">${cat.icon}</span>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="font-body-md text-[13px] font-semibold text-on-surface truncate ${isPaid ? 'line-through decoration-outline/60' : ''}">
+              ${escapeHtml(bill.name)}
+            </span>
+            <span class="px-1.5 py-0.2 rounded-full font-label-sm text-[9px] font-semibold ${isReceita ? 'bg-secondary/15 text-secondary' : (isReserved ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300' : 'bg-error-container/30 text-error')}">
+              ${isReceita ? 'Receita' : (isReserved ? '🔒 Reservada' : 'Despesa')}
+            </span>
+          </div>
+          <div class="flex items-center gap-1 mt-0.5">
+            <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full ${dueInfo.badgeClass} font-label-sm text-[10px]">
+              ${dueInfo.isDueToday ? '<span class="material-symbols-outlined text-[11px]">alarm</span>' : ''}
+              ${dueInfo.text}
+            </span>
+            <span class="text-on-surface-variant font-body-sm text-[11px] truncate">• ${escapeHtml(bill.category || (isReceita ? 'Entradas' : 'Moradia'))}</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col items-end shrink-0 gap-1">
+        <span class="font-amount-metric text-[14px] ${amountColor} font-bold tabular-nums ${isPaid ? 'line-through text-on-surface-variant' : ''}">
+          ${amountSign} ${formatCurrency(bill.amount)}
+        </span>
+        ${actionButtonsHtml}
+      </div>
+    </div>
+  `;
 }
 
 // ==========================================
@@ -1297,9 +1382,6 @@ function renderBillsView() {
     filtered = filtered.filter(b => b.status !== 'paid' && b.dueDate < todayStr);
   }
 
-  // Ordenar por vencimento mais próximo
-  filtered.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-
   // Renderizar Lista
   const container = document.getElementById('bills-list-container');
   const emptyState = document.getElementById('bills-empty-state');
@@ -1317,79 +1399,46 @@ function renderBillsView() {
 
   if (emptyState) emptyState.classList.add('hidden');
 
-  // Separar em grupos amigáveis
-  const groupAtrasadas = [];
-  const groupReservadas = [];
-  const groupHoje7Dias = [];
-  const groupMaisAdiante = [];
-  const groupPagas = [];
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
+  // Agrupar por data (dueDate)
+  const groupsByDate = {};
   filtered.forEach(bill => {
-    if (bill.status === 'paid') {
-      groupPagas.push(bill);
-      return;
+    const dKey = bill.dueDate || 'sem-data';
+    if (!groupsByDate[dKey]) {
+      groupsByDate[dKey] = [];
     }
+    groupsByDate[dKey].push(bill);
+  });
 
-    if (bill.status === 'reserved') {
-      groupReservadas.push(bill);
-      return;
-    }
-
-    const [y, m, d] = bill.dueDate.split('-').map(Number);
-    const due = new Date(y, m - 1, d);
-    due.setHours(0, 0, 0, 0);
-
-    const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) {
-      groupAtrasadas.push(bill);
-    } else if (diffDays <= 7) {
-      groupHoje7Dias.push(bill);
-    } else {
-      groupMaisAdiante.push(bill);
-    }
+  // Ordenar as datas em ordem decrescente (mais recente no topo, mais antigo embaixo)
+  const sortedDates = Object.keys(groupsByDate).sort((a, b) => {
+    if (a === 'sem-data') return 1;
+    if (b === 'sem-data') return -1;
+    return b.localeCompare(a); // Mais recente primeiro
   });
 
   let html = '';
+  sortedDates.forEach(dateKey => {
+    const dayBills = groupsByDate[dateKey];
+    // Dentro do mesmo dia: pendentes primeiro ou por nome
+    dayBills.sort((a, b) => {
+      if (a.status === 'paid' && b.status !== 'paid') return 1;
+      if (a.status !== 'paid' && b.status === 'paid') return -1;
+      return (a.name || '').localeCompare(b.name || '');
+    });
 
-  if (groupAtrasadas.length > 0) {
-    html += renderBillGroup('Pendentes Atrasados', groupAtrasadas, 'bg-error', 'text-error');
-  }
-  if (groupReservadas.length > 0) {
-    html += renderBillGroup('Dinheiro Reservado (Bloqueado)', groupReservadas, 'bg-sky-500', 'text-sky-700 dark:text-sky-300');
-  }
-  if (groupHoje7Dias.length > 0) {
-    html += renderBillGroup('Hoje e Próximos 7 Dias', groupHoje7Dias, 'bg-amber-500 animate-pulse', 'text-on-surface');
-  }
-  if (groupMaisAdiante.length > 0) {
-    html += renderBillGroup('Próximos do Mês', groupMaisAdiante, 'bg-primary', 'text-on-surface');
-  }
-  if (groupPagas.length > 0) {
-    html += renderBillGroup('Quitados e Recebidos', groupPagas, 'bg-secondary', 'text-secondary');
-  }
+    html += `
+      <div class="day-group flex flex-col gap-1.5">
+        ${renderDateSectionHeader(dateKey)}
+        <div class="flex flex-col gap-2">
+          ${dayBills.map(b => renderBillCard(b)).join('')}
+        </div>
+      </div>
+    `;
+  });
 
   if (container) container.innerHTML = html;
 }
 
-function renderBillGroup(title, bills, dotClass, textClass) {
-  return `
-    <div class="bill-group flex flex-col gap-2 mb-2">
-      <div class="flex items-center justify-between px-1">
-        <div class="flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full ${dotClass}"></span>
-          <h2 class="font-headline-sm text-[14px] ${textClass} font-semibold">${title}</h2>
-        </div>
-        <span class="font-label-sm text-[10px] text-on-surface-variant">${bills.length} ${bills.length === 1 ? 'item' : 'itens'}</span>
-      </div>
-      <div class="flex flex-col gap-2">
-        ${bills.map(b => renderBillCard(b)).join('')}
-      </div>
-    </div>
-  `;
-}
 
 function renderBillCard(bill) {
   const isReceita = bill.nature === 'receita';

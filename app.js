@@ -15,12 +15,13 @@ const SUPABASE_CONFIG = {
 let supabaseClient = null;
 let isSupabaseConnected = false;
 
-// Chaves de armazenamento (Fallback local, Tema e Ciclo)
+// Chaves de armazenamento (Fallback local, Tema, Ciclo e Backups)
 const STORAGE_KEYS = {
   BILLS: 'contafacil_bills',
   BALANCES: 'contafacil_balances',
   THEME: 'contafacil_theme',
-  CYCLE_START_DAY: 'contafacil_cycle_start_day'
+  CYCLE_START_DAY: 'contafacil_cycle_start_day',
+  BACKUPS: 'contafacil_backups_list'
 };
 
 // Categorias de Despesas (Saídas)
@@ -3074,6 +3075,489 @@ function escapeHtml(str) {
     "'": '&#39;',
     '"': '&quot;'
   }[tag] || tag));
+}
+
+// ==========================================
+// MÓDULO DE GESTÃO DE DADOS & BACKUPS
+// (Fazer Backup, Recuperar, Gerenciar e Reiniciar Base)
+// ==========================================
+
+function getStoredBackups() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.BACKUPS);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('Erro ao ler backups locais:', e);
+    return [];
+  }
+}
+
+function saveStoredBackups(backups) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.BACKUPS, JSON.stringify(backups));
+  } catch (e) {
+    console.error('Erro ao salvar backups:', e);
+  }
+}
+
+let activeBackupTab = 'create'; // 'create', 'restore', 'manage', 'reset'
+
+function openBackupModal(tab = 'create') {
+  const modal = document.getElementById('backup-modal');
+  if (!modal) return;
+
+  const now = new Date();
+  const defaultName = `Backup ${MONTH_SHORT[appState.currentMonth - 1]}/${appState.currentYear} (${formatDateBR(now.toISOString().split('T')[0])} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')})`;
+  
+  const nameInput = document.getElementById('backup-name-input');
+  if (nameInput) nameInput.value = defaultName;
+
+  const previewStats = document.getElementById('backup-preview-stats');
+  if (previewStats) {
+    const totalBills = (appState.bills || []).length;
+    const totalBalances = Object.keys(appState.balances || {}).length;
+    previewStats.textContent = `${totalBills} ${totalBills === 1 ? 'lançamento' : 'lançamentos'} • ${totalBalances} ${totalBalances === 1 ? 'saldo configurado' : 'saldos configurados'}`;
+  }
+
+  switchBackupTab(tab);
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeBackupModal() {
+  const modal = document.getElementById('backup-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+function switchBackupTab(tabName) {
+  activeBackupTab = tabName;
+  const tabs = ['create', 'restore', 'manage', 'reset'];
+
+  tabs.forEach(t => {
+    const btn = document.getElementById(`backup-tab-btn-${t}`);
+    const view = document.getElementById(`backup-view-${t}`);
+    if (btn && view) {
+      if (t === tabName) {
+        if (t === 'reset') {
+          btn.className = 'py-1.5 px-1 rounded-lg bg-error text-on-error font-label-sm text-[11px] font-semibold shadow-sm transition-all flex flex-col items-center justify-center gap-0.5';
+        } else {
+          btn.className = 'py-1.5 px-1 rounded-lg bg-surface-container-lowest text-primary font-label-sm text-[11px] font-semibold shadow-sm transition-all flex flex-col items-center justify-center gap-0.5';
+        }
+        view.classList.remove('hidden');
+      } else {
+        if (t === 'reset') {
+          btn.className = 'py-1.5 px-1 rounded-lg text-error hover:bg-error/10 font-label-sm text-[11px] transition-all flex flex-col items-center justify-center gap-0.5';
+        } else {
+          btn.className = 'py-1.5 px-1 rounded-lg text-on-surface-variant hover:text-on-surface font-label-sm text-[11px] transition-all flex flex-col items-center justify-center gap-0.5';
+        }
+        view.classList.add('hidden');
+      }
+    }
+  });
+
+  if (tabName === 'restore') {
+    renderBackupRestoreList();
+  } else if (tabName === 'manage') {
+    renderBackupManageList();
+  }
+}
+
+// 1. FAZER BACKUP
+function handleCreateBackup() {
+  const nameInput = document.getElementById('backup-name-input');
+  const customName = nameInput ? nameInput.value.trim() : '';
+
+  const now = new Date();
+  const id = 'bkp_' + now.getTime();
+  const fallbackName = `Backup ${MONTH_NAMES[appState.currentMonth - 1]} ${appState.currentYear} (${formatDateBR(now.toISOString().split('T')[0])} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')})`;
+  const finalName = customName || fallbackName;
+
+  const currentBills = getStoredBills();
+  const currentBalances = getStoredBalances();
+
+  const backupItem = {
+    id,
+    name: finalName,
+    createdAt: now.toISOString(),
+    createdAtFormatted: `${formatDateBR(now.toISOString().split('T')[0])} às ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+    totalBills: currentBills.length,
+    totalBalances: Object.keys(currentBalances).length,
+    cycleStartDay: appState.cycleStartDay || 30,
+    data: {
+      bills: JSON.parse(JSON.stringify(currentBills)),
+      balances: JSON.parse(JSON.stringify(currentBalances)),
+      cycleStartDay: appState.cycleStartDay || 30,
+      theme: localStorage.getItem(STORAGE_KEYS.THEME) || 'dark'
+    }
+  };
+
+  const backups = getStoredBackups();
+  backups.unshift(backupItem);
+  saveStoredBackups(backups);
+
+  showToast(`Backup "${finalName}" criado com sucesso! (${backupItem.totalBills} lançamentos)`);
+  switchBackupTab('manage');
+}
+
+// Exportar Base Atual em .JSON
+function handleExportCurrentJson() {
+  const currentBills = getStoredBills();
+  const currentBalances = getStoredBalances();
+  const exportPayload = {
+    appName: 'ContaFácil',
+    version: '2.0',
+    exportedAt: new Date().toISOString(),
+    cycleStartDay: appState.cycleStartDay || 30,
+    bills: currentBills,
+    balances: currentBalances
+  };
+
+  const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const y = appState.currentYear;
+  const m = String(appState.currentMonth).padStart(2, '0');
+  a.href = url;
+  a.download = `contafacil_backup_${y}_${m}_${Date.now()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Arquivo de backup (.JSON) baixado com sucesso!');
+}
+
+// Exportar snapshot específico em .JSON
+function handleExportSnapshotJson(backupId) {
+  const backups = getStoredBackups();
+  const bkp = backups.find(b => b.id === backupId);
+  if (!bkp) return;
+
+  const blob = new Blob([JSON.stringify(bkp, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeName = bkp.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  a.href = url;
+  a.download = `backup_${safeName}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`Arquivo do backup "${bkp.name}" baixado!`);
+}
+
+// 2. RECUPERAR BACKUP
+function renderBackupRestoreList() {
+  const container = document.getElementById('backup-restore-list');
+  const countEl = document.getElementById('backup-restore-count');
+  if (!container) return;
+
+  const backups = getStoredBackups();
+  if (countEl) countEl.textContent = `${backups.length} ${backups.length === 1 ? 'backup salvo' : 'backups salvos'}`;
+
+  if (backups.length === 0) {
+    container.innerHTML = `
+      <div class="p-6 text-center text-on-surface-variant bg-surface-container-low rounded-xl border border-surface-container-high flex flex-col items-center justify-center gap-1.5">
+        <span class="material-symbols-outlined text-[24px] opacity-60">backup</span>
+        <span class="font-headline-sm text-[13px] font-semibold text-on-surface">Nenhum backup encontrado</span>
+        <span class="font-body-sm text-[11px]">Crie um snapshot na aba "Fazer Backup" para poder recuperá-lo aqui.</span>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = backups.map(bkp => {
+    return `
+      <div class="p-3 bg-surface-container-lowest rounded-xl border border-surface-container-high shadow-sm flex items-center justify-between gap-2.5 transition-transform active:scale-[0.99]">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[18px]">restore</span>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <h4 class="font-headline-sm text-[13px] text-on-surface font-semibold truncate">${escapeHtml(bkp.name)}</h4>
+            <div class="flex items-center gap-1 text-[10px] text-on-surface-variant">
+              <span>${escapeHtml(bkp.createdAtFormatted || formatDateBR(bkp.createdAt))}</span>
+              <span>•</span>
+              <span class="font-semibold text-primary">${bkp.totalBills || 0} contas</span>
+            </div>
+          </div>
+        </div>
+        <button onclick="handleRestoreBackup('${bkp.id}')" class="px-3 py-1.5 rounded-lg bg-secondary text-on-secondary font-label-md text-[11px] font-semibold flex items-center gap-1 shadow-sm hover:opacity-90 active:scale-95 transition-all shrink-0 cursor-pointer">
+          <span class="material-symbols-outlined text-[14px]">history</span>
+          <span>Restaurar</span>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+async function handleRestoreBackup(backupId) {
+  const backups = getStoredBackups();
+  const bkp = backups.find(b => b.id === backupId);
+  if (!bkp) return;
+
+  const msg = `⚠️ ATENÇÃO: Deseja realmente restaurar o backup "${bkp.name}" criado em ${bkp.createdAtFormatted}?\n\nIsso SUBSTITUIRÁ todos os lançamentos e saldos atuais da base pelos dados deste backup.`;
+  if (!confirm(msg)) return;
+
+  try {
+    const restoredBills = bkp.data.bills || [];
+    const restoredBalances = bkp.data.balances || {};
+    const restoredCycleDay = bkp.data.cycleStartDay || 30;
+
+    appState.bills = JSON.parse(JSON.stringify(restoredBills));
+    appState.balances = JSON.parse(JSON.stringify(restoredBalances));
+    appState.cycleStartDay = restoredCycleDay;
+    saveLocalBackup();
+
+    // Sincronizar com Supabase se conectado
+    if (supabaseClient) {
+      updateSupabaseSyncStatus('syncing');
+      try {
+        // Limpar dados anteriores no banco
+        await supabaseClient.from('bills').delete().neq('id', '___force_clean___');
+        await supabaseClient.from('balances').delete().neq('year_month', '___force_clean___');
+
+        // Inserir lançamentos restaurados
+        if (restoredBills.length > 0) {
+          const dbBills = restoredBills.map(mapAppBillToSupabase);
+          await supabaseClient.from('bills').insert(dbBills);
+        }
+
+        // Inserir saldos restaurados
+        const balanceKeys = Object.keys(restoredBalances);
+        if (balanceKeys.length > 0) {
+          const dbBalances = balanceKeys.map(ym => ({
+            year_month: ym,
+            balance: parseFloat(restoredBalances[ym]) || 0,
+            updated_at: new Date().toISOString()
+          }));
+          await supabaseClient.from('balances').insert(dbBalances);
+        }
+        updateSupabaseSyncStatus('connected');
+      } catch (err) {
+        console.error('Falha ao sincronizar restauração no Supabase:', err);
+        updateSupabaseSyncStatus('error');
+      }
+    }
+
+    renderCurrentView();
+    closeBackupModal();
+    showToast(`Backup "${bkp.name}" restaurado com sucesso! (${restoredBills.length} lançamentos)`);
+  } catch (err) {
+    console.error('Erro na restauração:', err);
+    showToast('Erro ao restaurar dados do backup.');
+  }
+}
+
+// Importar Backup via arquivo .JSON do dispositivo
+function handleImportBackupFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      let bills = [];
+      let balances = {};
+      let cycleStartDay = 30;
+      let name = file.name.replace('.json', '');
+
+      if (parsed.data && parsed.data.bills) {
+        bills = parsed.data.bills;
+        balances = parsed.data.balances || {};
+        cycleStartDay = parsed.data.cycleStartDay || 30;
+        name = parsed.name || name;
+      } else if (parsed.bills) {
+        bills = parsed.bills;
+        balances = parsed.balances || {};
+        cycleStartDay = parsed.cycleStartDay || 30;
+      } else {
+        throw new Error('Formato de arquivo inválido.');
+      }
+
+      const now = new Date();
+      const newBkp = {
+        id: 'bkp_' + now.getTime(),
+        name: `Importado: ${name}`,
+        createdAt: now.toISOString(),
+        createdAtFormatted: `${formatDateBR(now.toISOString().split('T')[0])} às ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+        totalBills: bills.length,
+        totalBalances: Object.keys(balances).length,
+        cycleStartDay: cycleStartDay,
+        data: { bills, balances, cycleStartDay }
+      };
+
+      const backups = getStoredBackups();
+      backups.unshift(newBkp);
+      saveStoredBackups(backups);
+
+      showToast(`Arquivo "${file.name}" importado como backup com sucesso!`);
+      renderBackupRestoreList();
+      renderBackupManageList();
+
+      if (confirm(`Deseja restaurar este backup importado ("${newBkp.name}") agora mesmo na base ativa?`)) {
+        handleRestoreBackup(newBkp.id);
+      }
+    } catch (err) {
+      console.error('Erro ao ler arquivo JSON:', err);
+      showToast('Erro ao importar arquivo: formato JSON inválido.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// 3. GERENCIAR BACKUPS
+function renderBackupManageList() {
+  const container = document.getElementById('backup-manage-list');
+  const countEl = document.getElementById('backup-manage-count');
+  if (!container) return;
+
+  const backups = getStoredBackups();
+  if (countEl) countEl.textContent = `${backups.length} ${backups.length === 1 ? 'backup' : 'backups'}`;
+
+  if (backups.length === 0) {
+    container.innerHTML = `
+      <div class="p-6 text-center text-on-surface-variant bg-surface-container-low rounded-xl border border-surface-container-high flex flex-col items-center justify-center gap-1.5">
+        <span class="material-symbols-outlined text-[24px] opacity-60">folder_open</span>
+        <span class="font-headline-sm text-[13px] font-semibold text-on-surface">Nenhum backup cadastrado</span>
+        <span class="font-body-sm text-[11px]">Você ainda não criou nenhum snapshot de segurança.</span>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = backups.map(bkp => {
+    return `
+      <div class="p-3 bg-surface-container-lowest rounded-xl border border-surface-container-high shadow-sm flex flex-col gap-2">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-[16px]">save</span>
+            </div>
+            <div class="flex flex-col min-w-0">
+              <span class="font-headline-sm text-[13px] font-semibold text-on-surface truncate">${escapeHtml(bkp.name)}</span>
+              <span class="font-body-sm text-[10px] text-on-surface-variant">${escapeHtml(bkp.createdAtFormatted || formatDateBR(bkp.createdAt))} • ${bkp.totalBills || 0} contas • ${bkp.totalBalances || 0} saldos</span>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-[10px] text-on-surface-variant font-medium shrink-0">
+            ${bkp.data && bkp.data.cycleStartDay ? `Ciclo dia ${bkp.data.cycleStartDay}` : 'Snapshot'}
+          </span>
+        </div>
+        <!-- Botões de Ação do Gerenciador -->
+        <div class="pt-1 border-t border-surface-container-high flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <button onclick="handleRenameBackup('${bkp.id}')" title="Renomear backup" class="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-[11px] flex items-center gap-1 transition-colors cursor-pointer">
+              <span class="material-symbols-outlined text-[13px]">edit</span>
+              <span>Renomear</span>
+            </button>
+            <button onclick="handleExportSnapshotJson('${bkp.id}')" title="Baixar arquivo JSON" class="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-[11px] flex items-center gap-1 transition-colors cursor-pointer">
+              <span class="material-symbols-outlined text-[13px]">download</span>
+              <span>JSON</span>
+            </button>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="handleRestoreBackup('${bkp.id}')" title="Restaurar este backup" class="px-2.5 py-1 rounded-lg bg-secondary/15 hover:bg-secondary/25 text-secondary font-label-sm text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer">
+              <span class="material-symbols-outlined text-[13px]">history</span>
+              <span>Restaurar</span>
+            </button>
+            <button onclick="handleDeleteBackup('${bkp.id}')" title="Excluir este backup" class="w-7 h-7 rounded-lg bg-surface-container hover:bg-error-container text-on-surface-variant hover:text-error flex items-center justify-center transition-colors cursor-pointer">
+              <span class="material-symbols-outlined text-[15px]">delete</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function handleRenameBackup(backupId) {
+  const backups = getStoredBackups();
+  const bkp = backups.find(b => b.id === backupId);
+  if (!bkp) return;
+
+  const newName = prompt(`Digite o novo nome para o backup:`, bkp.name);
+  if (newName && newName.trim() && newName.trim() !== bkp.name) {
+    bkp.name = newName.trim();
+    saveStoredBackups(backups);
+    renderBackupManageList();
+    renderBackupRestoreList();
+    showToast('Nome do backup atualizado com sucesso!');
+  }
+}
+
+function handleDeleteBackup(backupId) {
+  const backups = getStoredBackups();
+  const bkp = backups.find(b => b.id === backupId);
+  if (!bkp) return;
+
+  if (confirm(`Deseja realmente apagar o backup "${bkp.name}"? Esta ação removerá este snapshot do histórico.`)) {
+    const updated = backups.filter(b => b.id !== backupId);
+    saveStoredBackups(updated);
+    renderBackupManageList();
+    renderBackupRestoreList();
+    showToast(`Backup "${bkp.name}" removido.`);
+  }
+}
+
+// 4. REINICIAR BASE (ZERAR TUDO)
+async function handleConfirmResetDatabase() {
+  const safetyCheckbox = document.getElementById('reset-safety-backup-toggle');
+  const shouldCreateSafetyBackup = safetyCheckbox ? safetyCheckbox.checked : true;
+
+  const warningMsg = `⚠️ CONFIRMAÇÃO FINAL DE RESET DA BASE DE DADOS:\n\nTem certeza absoluta de que deseja apagar TODOS os lançamentos, despesas, receitas e saldos da base atual?\n\nEsta ação deixará o sistema completamente limpo e zerado.`;
+  if (!confirm(warningMsg)) return;
+
+  try {
+    // 1. Criar backup de segurança automático se selecionado
+    if (shouldCreateSafetyBackup && (appState.bills.length > 0 || Object.keys(appState.balances).length > 0)) {
+      const now = new Date();
+      const autoBkp = {
+        id: 'bkp_' + now.getTime(),
+        name: `Backup Automático (Pré-Reset) - ${formatDateBR(now.toISOString().split('T')[0])} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+        createdAt: now.toISOString(),
+        createdAtFormatted: `${formatDateBR(now.toISOString().split('T')[0])} às ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+        totalBills: appState.bills.length,
+        totalBalances: Object.keys(appState.balances).length,
+        cycleStartDay: appState.cycleStartDay || 30,
+        data: {
+          bills: JSON.parse(JSON.stringify(appState.bills)),
+          balances: JSON.parse(JSON.stringify(appState.balances)),
+          cycleStartDay: appState.cycleStartDay || 30
+        }
+      };
+      const backups = getStoredBackups();
+      backups.unshift(autoBkp);
+      saveStoredBackups(backups);
+    }
+
+    // 2. Zerar estado atual na memória e no localStorage
+    appState.bills = [];
+    appState.balances = {};
+    saveLocalBackup();
+
+    // 3. Limpar tabelas no Supabase se conectado
+    if (supabaseClient) {
+      updateSupabaseSyncStatus('syncing');
+      try {
+        await supabaseClient.from('bills').delete().neq('id', '___force_clean___');
+        await supabaseClient.from('balances').delete().neq('year_month', '___force_clean___');
+        updateSupabaseSyncStatus('connected');
+      } catch (err) {
+        console.error('Falha ao limpar Supabase durante reset:', err);
+        updateSupabaseSyncStatus('error');
+      }
+    }
+
+    renderCurrentView();
+    closeBackupModal();
+    showToast('Base de dados reiniciada com sucesso! Todos os dados foram zerados.');
+  } catch (err) {
+    console.error('Erro ao reiniciar base:', err);
+    showToast('Erro ao reiniciar base de dados.');
+  }
 }
 
 // ==========================================

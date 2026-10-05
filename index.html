@@ -150,6 +150,12 @@
         <button id="theme-toggle-btn" onclick="toggleTheme()" title="Alternar tema claro/escuro" aria-label="Alternar tema claro/escuro" class="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center shadow-sm active:scale-90 transition-all border border-surface-container-high">
           <span id="theme-toggle-icon" class="material-symbols-outlined text-[18px]">dark_mode</span>
         </button>
+
+        <!-- Botão Discreto de Gestão de Dados e Backups -->
+        <button id="backup-manage-btn" onclick="openBackupModal()" title="Dados, Backups e Segurança" aria-label="Dados, Backups e Segurança" class="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center shadow-sm active:scale-90 transition-all border border-surface-container-high">
+          <span class="material-symbols-outlined text-[17px]">inventory_2</span>
+        </button>
+
         <button onclick="openBillModal()" title="Nova Conta" class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm active:scale-90 transition-transform">
           <span class="material-symbols-outlined text-[18px]">add</span>
         </button>
@@ -1016,6 +1022,57 @@
             <!-- Gerado dinamicamente -->
           </div>
         </div>
+
+        <!-- Seção Discreta: Dados, Backups & Segurança do Sistema -->
+        <div class="bg-surface-container-lowest p-3.5 rounded-2xl shadow-sm border border-surface-container-low space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-primary text-[18px]">admin_panel_settings</span>
+              <h3 class="font-headline-sm text-[14px] text-on-surface font-semibold">Dados & Segurança</h3>
+            </div>
+            <span class="font-label-sm text-[10px] text-on-surface-variant font-medium">Backup & Base</span>
+          </div>
+          <p class="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
+            Crie snapshots de segurança etiquetados com data e hora, recupere históricos ou reinicie a base com total controle.
+          </p>
+          <div class="grid grid-cols-2 gap-2 pt-0.5">
+            <!-- 1. Fazer Backup -->
+            <button onclick="openBackupModal('create')" class="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-left flex flex-col gap-1 transition-all border border-surface-container-high active:scale-98">
+              <div class="flex items-center gap-1.5 text-primary">
+                <span class="material-symbols-outlined text-[18px]">backup</span>
+                <span class="font-label-md text-[12px] font-semibold">Fazer Backup</span>
+              </div>
+              <span class="font-body-sm text-[10px] text-on-surface-variant">Salvar snapshot atual</span>
+            </button>
+
+            <!-- 2. Recuperar Backup -->
+            <button onclick="openBackupModal('restore')" class="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-left flex flex-col gap-1 transition-all border border-surface-container-high active:scale-98">
+              <div class="flex items-center gap-1.5 text-secondary">
+                <span class="material-symbols-outlined text-[18px]">restore</span>
+                <span class="font-label-md text-[12px] font-semibold">Recuperar Backup</span>
+              </div>
+              <span class="font-body-sm text-[10px] text-on-surface-variant">Restaurar base anterior</span>
+            </button>
+
+            <!-- 3. Gerenciar Backups -->
+            <button onclick="openBackupModal('manage')" class="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-left flex flex-col gap-1 transition-all border border-surface-container-high active:scale-98">
+              <div class="flex items-center gap-1.5 text-on-surface">
+                <span class="material-symbols-outlined text-[18px]">folder_managed</span>
+                <span class="font-label-md text-[12px] font-semibold">Gerenciar</span>
+              </div>
+              <span class="font-body-sm text-[10px] text-on-surface-variant">Editar nomes ou excluir</span>
+            </button>
+
+            <!-- 4. Reiniciar Base -->
+            <button onclick="openBackupModal('reset')" class="p-2.5 rounded-xl bg-error/5 hover:bg-error/10 text-left flex flex-col gap-1 transition-all border border-error/20 active:scale-98">
+              <div class="flex items-center gap-1.5 text-error">
+                <span class="material-symbols-outlined text-[18px]">delete_forever</span>
+                <span class="font-label-md text-[12px] font-semibold">Reiniciar Base</span>
+              </div>
+              <span class="font-body-sm text-[10px] text-error/80">Zerar todos os dados</span>
+            </button>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -1199,6 +1256,159 @@
           </button>
           <button onclick="closeBillModal()" class="w-full h-8 bg-transparent text-on-surface-variant hover:text-on-surface rounded-lg font-headline-sm text-[13px] font-medium transition-colors cursor-pointer" type="button">
             Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODAL DE GESTÃO DE DADOS, BACKUPS & SEGURANÇA                  -->
+    <!-- ============================================================== -->
+    <div id="backup-modal" class="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+      <div class="w-full max-w-md bg-surface text-on-surface rounded-t-3xl sm:rounded-2xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl animate-fade-in border-t sm:border border-surface-container-high">
+        <!-- Header do Modal -->
+        <div class="h-14 px-4 flex items-center justify-between border-b border-surface-container-high bg-surface shrink-0">
+          <div class="flex items-center gap-2">
+            <button onclick="closeBackupModal()" aria-label="Fechar" class="w-8 h-8 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container active:scale-95 transition-all">
+              <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+            <div class="flex flex-col">
+              <h2 class="font-headline-sm text-[16px] text-on-surface tracking-tight font-bold">Dados & Segurança</h2>
+              <span class="font-body-sm text-[10px] text-on-surface-variant">Backups, snapshots e gerenciamento da base</span>
+            </div>
+          </div>
+          <span class="material-symbols-outlined text-[20px] text-primary">database</span>
+        </div>
+
+        <!-- Segmented Tab Navigation dentro do Modal -->
+        <div class="p-2 border-b border-surface-container-low bg-surface shrink-0">
+          <div class="grid grid-cols-4 p-0.5 bg-surface-container rounded-xl gap-0.5 border border-surface-container-high text-center" id="backup-tabs-bar">
+            <button onclick="switchBackupTab('create')" id="backup-tab-btn-create" class="py-1.5 px-1 rounded-lg bg-surface-container-lowest text-primary font-label-sm text-[11px] font-semibold shadow-sm transition-all flex flex-col items-center justify-center gap-0.5">
+              <span class="material-symbols-outlined text-[16px]">backup</span>
+              <span class="truncate">Fazer Backup</span>
+            </button>
+            <button onclick="switchBackupTab('restore')" id="backup-tab-btn-restore" class="py-1.5 px-1 rounded-lg text-on-surface-variant hover:text-on-surface font-label-sm text-[11px] transition-all flex flex-col items-center justify-center gap-0.5">
+              <span class="material-symbols-outlined text-[16px]">restore</span>
+              <span class="truncate">Recuperar</span>
+            </button>
+            <button onclick="switchBackupTab('manage')" id="backup-tab-btn-manage" class="py-1.5 px-1 rounded-lg text-on-surface-variant hover:text-on-surface font-label-sm text-[11px] transition-all flex flex-col items-center justify-center gap-0.5">
+              <span class="material-symbols-outlined text-[16px]">folder_managed</span>
+              <span class="truncate">Gerenciar</span>
+            </button>
+            <button onclick="switchBackupTab('reset')" id="backup-tab-btn-reset" class="py-1.5 px-1 rounded-lg text-error hover:bg-error/10 font-label-sm text-[11px] transition-all flex flex-col items-center justify-center gap-0.5">
+              <span class="material-symbols-outlined text-[16px]">delete_forever</span>
+              <span class="truncate">Reiniciar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Conteúdo das 4 Abas do Modal -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-surface">
+          <!-- ABA 1: FAZER BACKUP -->
+          <div id="backup-view-create" class="backup-subview space-y-3">
+            <div class="bg-surface-container-lowest p-3.5 rounded-xl border border-surface-container-high space-y-2.5">
+              <div class="flex items-center gap-2 text-primary">
+                <span class="material-symbols-outlined text-[20px]">save</span>
+                <h3 class="font-headline-sm text-[14px] font-bold text-on-surface">Criar Novo Snapshot de Segurança</h3>
+              </div>
+              <p class="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
+                Este backup salvará todos os seus lançamentos, receitas, despesas, saldos mensais e ciclo configurado.
+              </p>
+              <div class="flex flex-col gap-1 pt-1">
+                <label class="font-label-sm text-[11px] text-on-surface font-semibold" for="backup-name-input">Nome ou Rótulo do Backup:</label>
+                <input id="backup-name-input" type="text" placeholder="Ex: Backup Antes do Fechamento de Outubro" class="w-full h-10 px-3 bg-surface-container-low rounded-xl font-body-md text-[13px] text-on-surface placeholder:text-on-surface-variant/50 border border-surface-container-high focus:outline-none focus:border-primary">
+              </div>
+              <div class="bg-surface-container-low p-2 rounded-lg flex items-center justify-between text-[11px] text-on-surface-variant border border-surface-container-high">
+                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-secondary">check_circle</span> Itens atuais na base:</span>
+                <span id="backup-preview-stats" class="font-semibold text-on-surface tabular-nums">0 lançamentos • 0 saldos</span>
+              </div>
+              <button onclick="handleCreateBackup()" class="w-full h-11 bg-primary text-on-primary rounded-xl font-headline-sm text-[13px] font-bold flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">backup</span>
+                <span>Salvar Snapshot Agora</span>
+              </button>
+            </div>
+
+            <!-- Opção de Baixar Arquivo JSON -->
+            <div class="bg-surface-container-lowest p-3 rounded-xl border border-surface-container-high flex items-center justify-between">
+              <div class="flex flex-col">
+                <span class="font-headline-sm text-[13px] font-semibold text-on-surface">Exportar Arquivo (.JSON)</span>
+                <span class="font-body-sm text-[10px] text-on-surface-variant">Baixar arquivo no computador/celular</span>
+              </div>
+              <button onclick="handleExportCurrentJson()" class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 border border-surface-container-high cursor-pointer">
+                <span class="material-symbols-outlined text-[15px]">download</span>
+                <span>Baixar</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ABA 2: RECUPERAR BACKUP -->
+          <div id="backup-view-restore" class="backup-subview hidden space-y-3">
+            <div class="flex items-center justify-between px-0.5">
+              <h3 class="font-headline-sm text-[13px] font-semibold text-on-surface">Escolha o Backup para Restaurar</h3>
+              <span id="backup-restore-count" class="font-label-sm text-[10px] text-on-surface-variant">0 backups salvos</span>
+            </div>
+            <p class="font-body-sm text-[11px] text-on-surface-variant">
+              Ao recuperar um backup, todos os dados atuais serão substituídos pelos dados daquele snapshot.
+            </p>
+            <div id="backup-restore-list" class="space-y-2">
+              <!-- Gerado dinamicamente -->
+            </div>
+            <!-- Importar do Dispositivo -->
+            <div class="pt-2 border-t border-surface-container-high flex items-center justify-between">
+              <div class="flex flex-col">
+                <span class="font-label-md text-[12px] font-semibold text-on-surface">Restaurar de arquivo .JSON</span>
+                <span class="font-body-sm text-[10px] text-on-surface-variant">Importar arquivo do seu dispositivo</span>
+              </div>
+              <label class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer border border-surface-container-high">
+                <span class="material-symbols-outlined text-[15px]">file_open</span>
+                <span>Selecionar</span>
+                <input type="file" id="backup-file-input" accept=".json" class="hidden" onchange="handleImportBackupFile(event)"/>
+              </label>
+            </div>
+          </div>
+
+          <!-- ABA 3: GERENCIAR BACKUPS -->
+          <div id="backup-view-manage" class="backup-subview hidden space-y-3">
+            <div class="flex items-center justify-between px-0.5">
+              <h3 class="font-headline-sm text-[13px] font-semibold text-on-surface">Gerenciador de Snapshots</h3>
+              <span id="backup-manage-count" class="font-label-sm text-[10px] text-on-surface-variant">0 backups</span>
+            </div>
+            <p class="font-body-sm text-[11px] text-on-surface-variant">
+              Aqui você pode editar os nomes dos backups salvos, exportar seus arquivos individuais ou excluí-los.
+            </p>
+            <div id="backup-manage-list" class="space-y-2">
+              <!-- Gerado dinamicamente -->
+            </div>
+          </div>
+
+          <!-- ABA 4: REINICIAR BASE (ZERAR TUDO) -->
+          <div id="backup-view-reset" class="backup-subview hidden space-y-3">
+            <div class="bg-error/10 dark:bg-red-950/40 p-4 rounded-2xl border border-error/30 space-y-3">
+              <div class="flex items-center gap-2 text-error">
+                <span class="material-symbols-outlined text-[24px]">warning</span>
+                <h3 class="font-headline-sm text-[15px] font-bold">Zona de Perigo: Reiniciar Base</h3>
+              </div>
+              <p class="font-body-sm text-[12px] text-on-surface leading-relaxed">
+                Esta ação apagará <strong>todos os lançamentos</strong>, <strong>contas cadastradas</strong>, <strong>receitas</strong> e <strong>saldos iniciais</strong>, deixando o sistema completamente limpo e zerado.
+              </p>
+              <div class="bg-surface-container-lowest p-3 rounded-xl border border-error/20 flex items-start gap-2">
+                <input type="checkbox" id="reset-safety-backup-toggle" checked class="mt-0.5 w-4 h-4 text-primary rounded border-surface-container-high cursor-pointer"/>
+                <label for="reset-safety-backup-toggle" class="font-body-sm text-[11px] text-on-surface cursor-pointer">
+                  <strong>Criar um backup automático de segurança antes de zerar</strong> (Recomendado para caso queira restaurar depois).
+                </label>
+              </div>
+              <button onclick="handleConfirmResetDatabase()" class="w-full h-11 bg-error text-on-error rounded-xl font-headline-sm text-[13px] font-bold flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">delete_forever</span>
+                <span>Zerar Todos os Dados Agora</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Footer de Fechar -->
+        <div class="p-3 border-t border-surface-container-high bg-surface flex items-center justify-end shrink-0">
+          <button onclick="closeBackupModal()" class="px-4 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface rounded-lg font-headline-sm text-[12px] font-semibold transition-colors cursor-pointer" type="button">
+            Fechar
           </button>
         </div>
       </div>

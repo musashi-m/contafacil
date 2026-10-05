@@ -188,10 +188,11 @@
           </div>
         </div>
 
-        <!-- Hero Card: Visão de Liquidez & Saldos -->
+        <!-- Hero Card: Visão de Liquidez, Dinheiro Limpo & Saldos -->
         <div class="relative overflow-hidden rounded-2xl bg-slate-900 text-white dark:bg-surface-container dark:text-on-surface p-4 shadow-md dark:border dark:border-surface-container-high">
           <div class="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none"></div>
-          <div class="absolute -left-12 -bottom-12 w-48 h-48 rounded-full bg-sky-500/10 blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-12 -bottom-12 w-48 h-48 rounded-full bg-sky-500/15 blur-3xl pointer-events-none"></div>
+          
           <div class="relative z-10 flex flex-col gap-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-1.5 text-slate-300 dark:text-on-surface-variant font-label-md text-[12px]">
@@ -203,70 +204,112 @@
                 Calculando...
               </span>
             </div>
+
             <!-- Valor Projetado Central -->
             <div class="flex flex-col">
               <span class="text-slate-300 dark:text-on-surface-variant font-body-sm text-[12px]">Saldo Estimado ao Final do Mês</span>
               <div class="flex items-baseline gap-1 mt-0.5">
-                <span id="home-projected-balance" class="font-display-currency-mobile text-[28px] text-white dark:text-on-surface tracking-tight tabular-nums font-bold">R$ 0,00</span>
+                <span id="home-projected-balance" class="font-display-currency-mobile text-[26px] text-white dark:text-on-surface tracking-tight tabular-nums font-bold">R$ 0,00</span>
               </div>
             </div>
-            <!-- Grid com Saldo Inicial vs Saldo Atual Real -->
-            <div class="grid grid-cols-2 gap-2 pt-2 bg-white/10 dark:bg-surface-container-lowest/60 rounded-xl p-2.5 backdrop-blur-sm border border-white/10 dark:border-surface-container-high">
-              <div class="flex flex-col cursor-pointer hover:bg-white/5 dark:hover:bg-white/5 p-1 rounded-lg transition-colors" onclick="switchTab('planejamento')" title="Toque para ajustar saldo inicial">
-                <div class="flex items-center gap-1 text-slate-300 dark:text-on-surface-variant font-label-sm text-[11px]">
-                  <span class="material-symbols-outlined text-[13px]">savings</span>
-                  <span>Saldo Inicial</span>
-                  <span class="material-symbols-outlined text-[11px] opacity-70">edit</span>
+
+            <!-- Destaque: Saldo Limpo Disponível (Livre para Gastar) -->
+            <div class="bg-emerald-500/15 dark:bg-emerald-950/40 p-2.5 rounded-xl flex items-center justify-between border border-emerald-400/25">
+              <div class="flex flex-col">
+                <div class="flex items-center gap-1 text-emerald-300 dark:text-emerald-400 font-label-sm text-[10px] uppercase font-bold tracking-wider">
+                  <span class="material-symbols-outlined text-[13px]">verified_user</span>
+                  <span>Saldo Limpo Disponível</span>
                 </div>
-                <span id="home-initial-balance" class="font-amount-metric text-[15px] text-white dark:text-on-surface mt-0.5 font-semibold tabular-nums">R$ 0,00</span>
+                <span id="home-clean-balance" class="font-headline-lg text-[20px] text-emerald-300 dark:text-emerald-300 font-bold tabular-nums">R$ 0,00</span>
+                <span class="font-body-sm text-[10px] text-slate-300 dark:text-on-surface-variant">Livre p/ gastar (sem mexer nas contas reservadas)</span>
               </div>
-              <div class="flex flex-col p-1">
-                <div class="flex items-center gap-1 text-slate-300 dark:text-on-surface-variant font-label-sm text-[11px]">
-                  <span class="material-symbols-outlined text-[13px]">payments</span>
-                  <span>Saldo Atual Real</span>
+              <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[18px]">lock_open</span>
+              </div>
+            </div>
+
+            <!-- Grid com Saldo Inicial, Saldo Atual Real e Dinheiro Reservado -->
+            <div class="grid grid-cols-3 gap-1.5 pt-1 bg-white/10 dark:bg-surface-container-lowest/60 rounded-xl p-2.5 backdrop-blur-sm border border-white/10 dark:border-surface-container-high">
+              <!-- Saldo Inicial -->
+              <div class="flex flex-col cursor-pointer hover:bg-white/5 dark:hover:bg-white/5 p-1 rounded-lg transition-colors" onclick="switchTab('planejamento')" title="Toque para ajustar saldo inicial">
+                <div class="flex items-center gap-1 text-slate-300 dark:text-on-surface-variant font-label-sm text-[10px]">
+                  <span>Inicial</span>
+                  <span class="material-symbols-outlined text-[10px] opacity-70">edit</span>
                 </div>
-                <span id="home-real-balance" class="font-amount-metric text-[15px] text-white dark:text-on-surface mt-0.5 font-semibold tabular-nums">R$ 0,00</span>
+                <span id="home-initial-balance" class="font-amount-metric text-[13px] text-white dark:text-on-surface mt-0.5 font-semibold tabular-nums">R$ 0,00</span>
+              </div>
+
+              <!-- Saldo Real em Conta -->
+              <div class="flex flex-col p-1 border-x border-white/10 dark:border-surface-container-high px-1.5">
+                <div class="flex items-center gap-1 text-slate-300 dark:text-on-surface-variant font-label-sm text-[10px]">
+                  <span>Em Conta</span>
+                </div>
+                <span id="home-real-balance" class="font-amount-metric text-[13px] text-white dark:text-on-surface mt-0.5 font-semibold tabular-nums">R$ 0,00</span>
+              </div>
+
+              <!-- Dinheiro Reservado -->
+              <div class="flex flex-col p-1 cursor-pointer hover:bg-white/5 dark:hover:bg-white/5 rounded-lg transition-colors" onclick="setBillFilter('reservadas'); switchTab('contas');" title="Ver contas reservadas">
+                <div class="flex items-center gap-0.5 text-sky-300 dark:text-sky-400 font-label-sm text-[10px] font-semibold">
+                  <span class="material-symbols-outlined text-[11px]">lock</span>
+                  <span>Reservado</span>
+                </div>
+                <span id="home-reserved-balance" class="font-amount-metric text-[13px] text-sky-300 dark:text-sky-400 mt-0.5 font-bold tabular-nums">R$ 0,00</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Métricas Rápidas das Contas (Grid 3 Colunas: Receitas (+), Despesas (-), A Pagar) -->
-        <div class="grid grid-cols-3 gap-2">
+        <!-- Métricas Rápidas das Contas (Grid 4 Colunas: Receitas (+), Despesas (-), Reservado (🔒), Em Aberto) -->
+        <div class="grid grid-cols-4 gap-1.5">
           <!-- Receitas Previstas -->
-          <div class="bg-surface-container-lowest rounded-xl p-2.5 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low">
+          <div class="bg-surface-container-lowest rounded-xl p-2 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low">
             <div class="w-1 h-full absolute left-0 top-0 bg-secondary"></div>
             <div class="flex items-center justify-between text-secondary">
-              <span class="font-label-sm text-[10px] font-semibold">Receitas (+)</span>
-              <span class="material-symbols-outlined text-[15px]">arrow_upward</span>
+              <span class="font-label-sm text-[9px] font-semibold">Receitas</span>
+              <span class="material-symbols-outlined text-[13px]">arrow_upward</span>
             </div>
             <div class="mt-1">
-              <span id="home-total-receitas-val" class="font-amount-metric text-[14px] text-secondary block truncate font-semibold tabular-nums">R$ 0,00</span>
-              <span id="home-total-receitas-sub" class="font-body-sm text-[10px] text-on-surface-variant">0 entradas</span>
+              <span id="home-total-receitas-val" class="font-amount-metric text-[12px] text-secondary block truncate font-semibold tabular-nums">R$ 0,00</span>
+              <span id="home-total-receitas-sub" class="font-body-sm text-[9px] text-on-surface-variant truncate block">0 entradas</span>
             </div>
           </div>
+
           <!-- Despesas Previstas -->
-          <div class="bg-surface-container-lowest rounded-xl p-2.5 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low">
+          <div class="bg-surface-container-lowest rounded-xl p-2 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low">
             <div class="w-1 h-full absolute left-0 top-0 bg-error"></div>
             <div class="flex items-center justify-between text-error">
-              <span class="font-label-sm text-[10px] font-semibold">Despesas (-)</span>
-              <span class="material-symbols-outlined text-[15px]">arrow_downward</span>
+              <span class="font-label-sm text-[9px] font-semibold">Despesas</span>
+              <span class="material-symbols-outlined text-[13px]">arrow_downward</span>
             </div>
             <div class="mt-1">
-              <span id="home-total-despesas-val" class="font-amount-metric text-[14px] text-on-surface block truncate font-semibold tabular-nums">R$ 0,00</span>
-              <span id="home-total-despesas-sub" class="font-body-sm text-[10px] text-on-surface-variant">0 saídas</span>
+              <span id="home-total-despesas-val" class="font-amount-metric text-[12px] text-on-surface block truncate font-semibold tabular-nums">R$ 0,00</span>
+              <span id="home-total-despesas-sub" class="font-body-sm text-[9px] text-on-surface-variant truncate block">0 saídas</span>
             </div>
           </div>
-          <!-- A Pagar Pendente -->
-          <div class="bg-surface-container-lowest rounded-xl p-2.5 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low">
-            <div class="w-1 h-full absolute left-0 top-0 bg-on-tertiary-container"></div>
-            <div class="flex items-center justify-between text-on-tertiary-container">
-              <span class="font-label-sm text-[10px] font-semibold">A Pagar</span>
-              <span class="material-symbols-outlined text-[15px]">pending_actions</span>
+
+          <!-- Reservado para Contas -->
+          <div class="bg-surface-container-lowest rounded-xl p-2 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low cursor-pointer hover:bg-surface-container" onclick="setBillFilter('reservadas'); switchTab('contas');" title="Ver contas reservadas">
+            <div class="w-1 h-full absolute left-0 top-0 bg-sky-500"></div>
+            <div class="flex items-center justify-between text-sky-600 dark:text-sky-400">
+              <span class="font-label-sm text-[9px] font-semibold">Reservado</span>
+              <span class="material-symbols-outlined text-[13px]">lock</span>
             </div>
             <div class="mt-1">
-              <span id="home-total-pagar-val" class="font-amount-metric text-[14px] text-on-tertiary-container block truncate font-semibold tabular-nums">R$ 0,00</span>
-              <span id="home-total-pagar-sub" class="font-body-sm text-[10px] text-on-surface-variant">0 pendentes</span>
+              <span id="home-total-reservado-val" class="font-amount-metric text-[12px] text-sky-600 dark:text-sky-400 block truncate font-bold tabular-nums">R$ 0,00</span>
+              <span id="home-total-reservado-sub" class="font-body-sm text-[9px] text-on-surface-variant truncate block">0 contas</span>
+            </div>
+          </div>
+
+          <!-- A Pagar Pendente (Em Aberto) -->
+          <div class="bg-surface-container-lowest rounded-xl p-2 shadow-sm flex flex-col justify-between relative overflow-hidden border border-surface-container-low">
+            <div class="w-1 h-full absolute left-0 top-0 bg-on-tertiary-container"></div>
+            <div class="flex items-center justify-between text-on-tertiary-container">
+              <span class="font-label-sm text-[9px] font-semibold">Em Aberto</span>
+              <span class="material-symbols-outlined text-[13px]">pending_actions</span>
+            </div>
+            <div class="mt-1">
+              <span id="home-total-pagar-val" class="font-amount-metric text-[12px] text-on-tertiary-container block truncate font-semibold tabular-nums">R$ 0,00</span>
+              <span id="home-total-pagar-sub" class="font-body-sm text-[9px] text-on-surface-variant truncate block">0 pendentes</span>
             </div>
           </div>
         </div>
@@ -365,29 +408,37 @@
           </button>
         </div>
 
-        <!-- Metric Ribbon Summary (Entradas vs Despesas vs Restante) -->
-        <div class="w-full bg-surface-container-lowest rounded-xl p-2.5 shadow-sm flex items-center justify-between gap-1.5 border border-surface-container-low">
-          <div class="flex items-center gap-1.5 min-w-0 flex-1">
-            <div class="w-1.5 h-6 rounded-full bg-secondary shrink-0"></div>
+        <!-- Metric Ribbon Summary (Entradas vs Despesas vs Reservado vs Em Aberto) -->
+        <div class="w-full bg-surface-container-lowest rounded-xl p-2 shadow-sm flex items-center justify-between gap-1 border border-surface-container-low">
+          <div class="flex items-center gap-1 min-w-0 flex-1">
+            <div class="w-1 h-5 rounded-full bg-secondary shrink-0"></div>
             <div class="flex flex-col min-w-0">
-              <span class="font-label-sm text-[9px] text-secondary font-semibold uppercase tracking-wider">Receitas (+)</span>
-              <span id="bills-ribbon-receitas" class="font-amount-metric text-[13px] text-secondary truncate font-semibold tabular-nums">R$ 0,00</span>
+              <span class="font-label-sm text-[8px] text-secondary font-semibold uppercase tracking-wider">Receitas</span>
+              <span id="bills-ribbon-receitas" class="font-amount-metric text-[11px] text-secondary truncate font-semibold tabular-nums">R$ 0,00</span>
             </div>
           </div>
-          <div class="h-5 w-px bg-surface-container-highest shrink-0"></div>
-          <div class="flex items-center gap-1.5 min-w-0 flex-1">
-            <div class="w-1.5 h-6 rounded-full bg-error shrink-0"></div>
+          <div class="h-4 w-px bg-surface-container-highest shrink-0"></div>
+          <div class="flex items-center gap-1 min-w-0 flex-1">
+            <div class="w-1 h-5 rounded-full bg-error shrink-0"></div>
             <div class="flex flex-col min-w-0">
-              <span class="font-label-sm text-[9px] text-error font-semibold uppercase tracking-wider">Despesas (-)</span>
-              <span id="bills-ribbon-despesas" class="font-amount-metric text-[13px] text-on-surface truncate font-semibold tabular-nums">R$ 0,00</span>
+              <span class="font-label-sm text-[8px] text-error font-semibold uppercase tracking-wider">Despesas</span>
+              <span id="bills-ribbon-despesas" class="font-amount-metric text-[11px] text-on-surface truncate font-semibold tabular-nums">R$ 0,00</span>
             </div>
           </div>
-          <div class="h-5 w-px bg-surface-container-highest shrink-0"></div>
-          <div class="flex items-center gap-1.5 min-w-0 flex-1">
-            <div class="w-1.5 h-6 rounded-full bg-on-tertiary-container shrink-0"></div>
+          <div class="h-4 w-px bg-surface-container-highest shrink-0"></div>
+          <div class="flex items-center gap-1 min-w-0 flex-1 cursor-pointer" onclick="setBillFilter('reservadas')" title="Filtrar reservadas">
+            <div class="w-1 h-5 rounded-full bg-sky-500 shrink-0"></div>
             <div class="flex flex-col min-w-0">
-              <span class="font-label-sm text-[9px] text-on-surface-variant uppercase tracking-wider">A Pagar</span>
-              <span id="bills-ribbon-restante" class="font-amount-metric text-[13px] text-on-tertiary-container truncate font-semibold tabular-nums">R$ 0,00</span>
+              <span class="font-label-sm text-[8px] text-sky-600 dark:text-sky-400 font-semibold uppercase tracking-wider">Reservado</span>
+              <span id="bills-ribbon-reservado" class="font-amount-metric text-[11px] text-sky-600 dark:text-sky-400 truncate font-bold tabular-nums">R$ 0,00</span>
+            </div>
+          </div>
+          <div class="h-4 w-px bg-surface-container-highest shrink-0"></div>
+          <div class="flex items-center gap-1 min-w-0 flex-1">
+            <div class="w-1 h-5 rounded-full bg-on-tertiary-container shrink-0"></div>
+            <div class="flex flex-col min-w-0">
+              <span class="font-label-sm text-[8px] text-on-surface-variant uppercase tracking-wider">Em Aberto</span>
+              <span id="bills-ribbon-restante" class="font-amount-metric text-[11px] text-on-tertiary-container truncate font-semibold tabular-nums">R$ 0,00</span>
             </div>
           </div>
         </div>
@@ -407,8 +458,13 @@
                 <span id="count-tab-todas" class="px-1.5 py-0.2 rounded-full bg-surface-container-highest/20 font-label-sm text-[9px]">0</span>
               </button>
               <button onclick="setBillFilter('a-pagar')" class="filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="a-pagar">
-                <span>Pendentes</span>
+                <span>Em Aberto</span>
                 <span id="count-tab-a-pagar" class="px-1.5 py-0.2 rounded-full bg-surface-container font-label-sm text-[9px] text-on-surface-variant">0</span>
+              </button>
+              <button onclick="setBillFilter('reservadas')" class="filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-sky-700 dark:text-sky-300 font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="reservadas">
+                <span class="material-symbols-outlined text-[13px]">lock</span>
+                <span>Reservadas</span>
+                <span id="count-tab-reservadas" class="px-1.5 py-0.2 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 font-label-sm text-[9px] font-bold">0</span>
               </button>
               <button onclick="setBillFilter('pagas')" class="filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all" data-filter="pagas">
                 <span>Quitados/Recebidos</span>
@@ -821,6 +877,26 @@
             </div>
             <div class="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-on-secondary shadow-sm">
               <span class="material-symbols-outlined text-[18px]">verified</span>
+            </div>
+          </div>
+
+          <!-- Saldo Limpo & Dinheiro Reservado -->
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-emerald-500/10 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-500/25 flex flex-col justify-between">
+              <div class="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-label-sm text-[10px] font-bold uppercase">
+                <span class="material-symbols-outlined text-[13px]">lock_open</span>
+                <span>Saldo Limpo</span>
+              </div>
+              <span id="planning-clean-balance" class="font-amount-metric text-[15px] text-emerald-600 dark:text-emerald-300 font-bold tabular-nums mt-0.5">R$ 0,00</span>
+              <span class="font-body-sm text-[9px] text-on-surface-variant">Livre p/ gastar hoje</span>
+            </div>
+            <div class="bg-sky-500/10 dark:bg-sky-950/40 p-2.5 rounded-xl border border-sky-500/25 flex flex-col justify-between cursor-pointer hover:bg-sky-500/15 transition-colors" onclick="setBillFilter('reservadas'); switchTab('contas');" title="Ver contas reservadas">
+              <div class="flex items-center gap-1 text-sky-700 dark:text-sky-300 font-label-sm text-[10px] font-bold uppercase">
+                <span class="material-symbols-outlined text-[13px]">lock</span>
+                <span>Reservado</span>
+              </div>
+              <span id="planning-reserved-balance" class="font-amount-metric text-[15px] text-sky-600 dark:text-sky-300 font-bold tabular-nums mt-0.5">R$ 0,00</span>
+              <span class="font-body-sm text-[9px] text-on-surface-variant">Comprometido</span>
             </div>
           </div>
 

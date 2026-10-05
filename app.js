@@ -337,7 +337,18 @@ function getBillDueInfo(dueDateStr, status, nature = 'despesa') {
       text: isReceita ? 'Recebida' : 'Quitada',
       badgeClass: 'bg-secondary-container/60 text-on-secondary-container dark:bg-emerald-950/60 dark:text-emerald-300 font-medium',
       isOverdue: false,
-      isDueToday: false
+      isDueToday: false,
+      isReserved: false
+    };
+  }
+
+  if (status === 'reserved') {
+    return {
+      text: 'Reservado',
+      badgeClass: 'bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300 font-semibold border border-sky-400/30',
+      isOverdue: false,
+      isDueToday: false,
+      isReserved: true
     };
   }
 
@@ -346,7 +357,8 @@ function getBillDueInfo(dueDateStr, status, nature = 'despesa') {
       text: 'Sem data',
       badgeClass: 'bg-surface-container text-on-surface-variant font-medium',
       isOverdue: false,
-      isDueToday: false
+      isDueToday: false,
+      isReserved: false
     };
   }
 
@@ -368,7 +380,8 @@ function getBillDueInfo(dueDateStr, status, nature = 'despesa') {
         ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-300 font-semibold' 
         : 'bg-error-container text-on-error-container dark:bg-red-950/70 dark:text-red-300 font-semibold',
       isOverdue: true,
-      isDueToday: false
+      isDueToday: false,
+      isReserved: false
     };
   } else if (diffDays === 0) {
     return {
@@ -377,28 +390,32 @@ function getBillDueInfo(dueDateStr, status, nature = 'despesa') {
         ? 'bg-secondary-container text-on-secondary-container dark:bg-emerald-950/80 dark:text-emerald-300 font-semibold animate-pulse' 
         : 'bg-error-container text-on-error-container dark:bg-red-950/70 dark:text-red-300 font-semibold animate-pulse',
       isOverdue: false,
-      isDueToday: true
+      isDueToday: true,
+      isReserved: false
     };
   } else if (diffDays === 1) {
     return {
       text: isReceita ? 'Recebe Amanhã' : 'Vence Amanhã',
       badgeClass: 'bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-300 font-medium',
       isOverdue: false,
-      isDueToday: false
+      isDueToday: false,
+      isReserved: false
     };
   } else if (diffDays <= 7) {
     return {
       text: `Em ${diffDays} dias`,
       badgeClass: 'bg-surface-container-high text-on-surface-variant font-medium',
       isOverdue: false,
-      isDueToday: false
+      isDueToday: false,
+      isReserved: false
     };
   } else {
     return {
       text: `${d} ${MONTH_SHORT[m - 1]}`,
       badgeClass: 'bg-surface-container text-on-surface-variant font-medium',
       isOverdue: false,
-      isDueToday: false
+      isDueToday: false,
+      isReserved: false
     };
   }
 }
@@ -533,10 +550,14 @@ function getMonthFinancialData(year, month) {
 
   let totalDespesasPrevistas = 0;
   let totalDespesasPagas = 0;
+  let totalDespesasReservadas = 0;
+  let totalDespesasAbertas = 0;
   let totalDespesasPendentes = 0;
   let countDespesas = 0;
 
   let countPagas = 0;
+  let countReservadas = 0;
+  let countPendentesAbertas = 0;
   let countPendentes = 0;
   let countAtrasadas = 0;
 
@@ -565,8 +586,18 @@ function getMonthFinancialData(year, month) {
       if (bill.status === 'paid') {
         totalDespesasPagas += val;
         countPagas++;
-      } else {
+      } else if (bill.status === 'reserved') {
+        totalDespesasReservadas += val;
         totalDespesasPendentes += val;
+        countReservadas++;
+        countPendentes++;
+        if (bill.dueDate < todayStr) {
+          countAtrasadas++;
+        }
+      } else {
+        totalDespesasAbertas += val;
+        totalDespesasPendentes += val;
+        countPendentesAbertas++;
         countPendentes++;
         if (bill.dueDate < todayStr) {
           countAtrasadas++;
@@ -575,7 +606,13 @@ function getMonthFinancialData(year, month) {
     }
   });
 
+  // Saldo Real em Conta (dinheiro real na conta hoje: Inicial + Receitas Recebidas - Despesas Pagas)
   const saldoAtualReal = initialBalance + totalReceitasRecebidas - totalDespesasPagas;
+
+  // Saldo Limpo Disponível (saldo na conta descontando o dinheiro reservado para contas)
+  const saldoLimpoDisponivel = saldoAtualReal - totalDespesasReservadas;
+
+  // Saldo Projetado ao Fechamento do Mês
   const saldoProjetadoFinal = initialBalance + totalReceitasPrevistas - totalDespesasPrevistas;
   const resultadoMes = totalReceitasPrevistas - totalDespesasPrevistas;
 
@@ -597,16 +634,23 @@ function getMonthFinancialData(year, month) {
     countReceitas,
     totalDespesasPrevistas,
     totalDespesasPagas,
+    totalDespesasReservadas,
+    totalDespesasAbertas,
     totalDespesasPendentes,
     countDespesas,
     totalPrevisto: totalDespesasPrevistas,
     totalPago: totalDespesasPagas,
+    totalReservado: totalDespesasReservadas,
+    totalAberto: totalDespesasAbertas,
     totalPendente: totalDespesasPendentes,
     countTotal: monthBills.length,
     countPagas,
+    countReservadas,
+    countPendentesAbertas,
     countPendentes,
     countAtrasadas,
     saldoAtualReal,
+    saldoLimpoDisponivel,
     saldoProjetadoFinal,
     resultadoMes,
     pctExecucao
@@ -715,9 +759,11 @@ function renderHomeView() {
   // Pílulas de meses rápidos
   renderMonthPills('home-month-pills');
 
-  // Hero Card de Fechamento
+  // Hero Card de Fechamento & Saldos
   const projectedBalanceEl = document.getElementById('home-projected-balance');
   const projectedBadgeEl = document.getElementById('home-projected-badge');
+  const cleanBalanceEl = document.getElementById('home-clean-balance');
+  const reservedBalanceEl = document.getElementById('home-reserved-balance');
   const initialBalanceEl = document.getElementById('home-initial-balance');
   const realBalanceEl = document.getElementById('home-real-balance');
 
@@ -735,14 +781,31 @@ function renderHomeView() {
     }
   }
 
+  // Saldo Limpo Disponível (Livre para Gastar)
+  if (cleanBalanceEl) {
+    cleanBalanceEl.textContent = formatCurrency(data.saldoLimpoDisponivel);
+    if (data.saldoLimpoDisponivel < 0) {
+      cleanBalanceEl.className = 'font-headline-lg text-[20px] text-rose-400 dark:text-rose-400 font-bold tabular-nums';
+    } else {
+      cleanBalanceEl.className = 'font-headline-lg text-[20px] text-emerald-300 dark:text-emerald-300 font-bold tabular-nums';
+    }
+  }
+
+  // Dinheiro Reservado
+  if (reservedBalanceEl) {
+    reservedBalanceEl.textContent = formatCurrency(data.totalDespesasReservadas);
+  }
+
   if (initialBalanceEl) initialBalanceEl.textContent = formatCurrency(data.initialBalance);
   if (realBalanceEl) realBalanceEl.textContent = formatCurrency(data.saldoAtualReal);
 
-  // Grid de 3 Colunas (Receitas (+), Despesas (-), A Pagar)
+  // Grid de 4 Colunas (Receitas (+), Despesas (-), Reservado (🔒), Em Aberto)
   const totalReceitasVal = document.getElementById('home-total-receitas-val');
   const totalReceitasSub = document.getElementById('home-total-receitas-sub');
   const totalDespesasVal = document.getElementById('home-total-despesas-val');
   const totalDespesasSub = document.getElementById('home-total-despesas-sub');
+  const totalReservadoVal = document.getElementById('home-total-reservado-val');
+  const totalReservadoSub = document.getElementById('home-total-reservado-sub');
   const totalPagarVal = document.getElementById('home-total-pagar-val');
   const totalPagarSub = document.getElementById('home-total-pagar-sub');
 
@@ -752,8 +815,11 @@ function renderHomeView() {
   if (totalDespesasVal) totalDespesasVal.textContent = formatCurrency(data.totalDespesasPrevistas);
   if (totalDespesasSub) totalDespesasSub.textContent = `${data.countDespesas} ${data.countDespesas === 1 ? 'saída' : 'saídas'}`;
 
-  if (totalPagarVal) totalPagarVal.textContent = formatCurrency(data.totalDespesasPendentes);
-  if (totalPagarSub) totalPagarSub.textContent = `${data.countPendentes} ${data.countPendentes === 1 ? 'pendente' : 'pendentes'}`;
+  if (totalReservadoVal) totalReservadoVal.textContent = formatCurrency(data.totalDespesasReservadas);
+  if (totalReservadoSub) totalReservadoSub.textContent = `${data.countReservadas} ${data.countReservadas === 1 ? 'reservada' : 'reservadas'}`;
+
+  if (totalPagarVal) totalPagarVal.textContent = formatCurrency(data.totalDespesasAbertas);
+  if (totalPagarSub) totalPagarSub.textContent = `${data.countPendentesAbertas} ${data.countPendentesAbertas === 1 ? 'em aberto' : 'em aberto'}`;
 
   // Barra de Progresso
   const progressPct = document.getElementById('home-progress-pct');
@@ -957,20 +1023,64 @@ function renderHomeUpcomingBills(bills) {
     const cat = getCategoryInfo(bill.category, bill.nature);
     const dueInfo = getBillDueInfo(bill.dueDate, bill.status, bill.nature);
     const isPaid = bill.status === 'paid';
+    const isReserved = bill.status === 'reserved';
 
     const amountColor = isReceita ? 'text-secondary' : 'text-on-surface';
     const amountSign = isReceita ? '+' : '-';
 
-    const actionBtnText = isReceita 
-      ? (isPaid ? '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Recebido</span>' : 'Receber')
-      : (isPaid ? '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Pago</span>' : 'Pagar');
+    let actionButtonsHtml = '';
 
-    const actionBtnClass = isPaid
-      ? 'bg-secondary text-on-secondary'
-      : (isReceita ? 'bg-secondary text-on-secondary hover:opacity-90' : 'bg-primary text-on-primary hover:opacity-90');
+    if (isReceita) {
+      if (isPaid) {
+        actionButtonsHtml = `
+          <button onclick="toggleBillPayment('${bill.id}')" class="pay-btn px-2.5 py-1 rounded-lg bg-secondary text-on-secondary font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Recebido</span>
+          </button>
+        `;
+      } else {
+        actionButtonsHtml = `
+          <button onclick="toggleBillPayment('${bill.id}')" class="pay-btn px-2.5 py-1 rounded-lg bg-secondary text-on-secondary hover:opacity-90 font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
+            Receber
+          </button>
+        `;
+      }
+    } else {
+      if (isPaid) {
+        actionButtonsHtml = `
+          <button onclick="toggleBillPayment('${bill.id}')" class="pay-btn px-2.5 py-1 rounded-lg bg-secondary text-on-secondary font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
+            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Pago</span>
+          </button>
+        `;
+      } else if (isReserved) {
+        actionButtonsHtml = `
+          <div class="flex items-center gap-1">
+            <button onclick="toggleBillReserved('${bill.id}')" title="Desfazer reserva deste dinheiro" class="px-2 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-[10px] font-medium transition-all active:scale-95">
+              Desfazer
+            </button>
+            <button onclick="toggleBillPayment('${bill.id}')" title="Liquidar e marcar como paga" class="pay-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary hover:opacity-90 font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
+              Pagar
+            </button>
+          </div>
+        `;
+      } else {
+        actionButtonsHtml = `
+          <div class="flex items-center gap-1">
+            <button onclick="toggleBillReserved('${bill.id}')" title="Reservar dinheiro na conta para pagar esta conta" class="px-2 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 font-label-sm text-[10px] font-semibold border border-sky-400/30 flex items-center gap-0.5 transition-all active:scale-95">
+              <span class="material-symbols-outlined text-[12px]">lock</span>
+              <span>Reservar</span>
+            </button>
+            <button onclick="toggleBillPayment('${bill.id}')" title="Pagar diretamente" class="pay-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary hover:opacity-90 font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
+              Pagar
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    const cardHighlight = isReserved ? 'border-l-4 border-l-sky-500 bg-sky-500/[0.03] dark:bg-sky-950/20' : '';
 
     return `
-      <div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex items-center justify-between gap-2.5 transition-transform active:scale-[0.99] border border-surface-container-low ${isPaid ? 'opacity-75' : ''}">
+      <div class="bg-surface-container-lowest rounded-xl p-3 shadow-sm flex items-center justify-between gap-2.5 transition-transform active:scale-[0.99] border border-surface-container-low ${cardHighlight} ${isPaid ? 'opacity-75' : ''}">
         <div class="flex items-center gap-2.5 min-w-0">
           <div class="w-10 h-10 rounded-xl ${cat.bg} flex items-center justify-center shrink-0 shadow-sm">
             <span class="material-symbols-outlined text-[20px]">${cat.icon}</span>
@@ -980,8 +1090,8 @@ function renderHomeUpcomingBills(bills) {
               <span class="font-body-md text-[13px] font-semibold text-on-surface truncate ${isPaid ? 'line-through decoration-outline/60' : ''}">
                 ${escapeHtml(bill.name)}
               </span>
-              <span class="px-1.5 py-0.2 rounded-full font-label-sm text-[9px] font-semibold ${isReceita ? 'bg-secondary/15 text-secondary' : 'bg-error-container/30 text-error'}">
-                ${isReceita ? 'Receita' : 'Despesa'}
+              <span class="px-1.5 py-0.2 rounded-full font-label-sm text-[9px] font-semibold ${isReceita ? 'bg-secondary/15 text-secondary' : (isReserved ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300' : 'bg-error-container/30 text-error')}">
+                ${isReceita ? 'Receita' : (isReserved ? '🔒 Reservada' : 'Despesa')}
               </span>
             </div>
             <div class="flex items-center gap-1 mt-0.5">
@@ -997,9 +1107,7 @@ function renderHomeUpcomingBills(bills) {
           <span class="font-amount-metric text-[14px] ${amountColor} font-bold tabular-nums ${isPaid ? 'line-through text-on-surface-variant' : ''}">
             ${amountSign} ${formatCurrency(bill.amount)}
           </span>
-          <button onclick="toggleBillPayment('${bill.id}')" class="pay-btn px-2.5 py-1 rounded-lg ${actionBtnClass} font-label-sm text-[11px] font-medium active:scale-95 transition-all shadow-sm">
-            ${actionBtnText}
-          </button>
+          ${actionButtonsHtml}
         </div>
       </div>
     `;
@@ -1021,19 +1129,23 @@ function renderBillsView() {
   // Metric Ribbon
   const ribbonReceitas = document.getElementById('bills-ribbon-receitas');
   const ribbonDespesas = document.getElementById('bills-ribbon-despesas');
+  const ribbonReservado = document.getElementById('bills-ribbon-reservado');
   const ribbonRestante = document.getElementById('bills-ribbon-restante');
   if (ribbonReceitas) ribbonReceitas.textContent = formatCurrency(data.totalReceitasPrevistas);
   if (ribbonDespesas) ribbonDespesas.textContent = formatCurrency(data.totalDespesasPrevistas);
-  if (ribbonRestante) ribbonRestante.textContent = formatCurrency(data.totalDespesasPendentes);
+  if (ribbonReservado) ribbonReservado.textContent = formatCurrency(data.totalDespesasReservadas);
+  if (ribbonRestante) ribbonRestante.textContent = formatCurrency(data.totalDespesasAbertas);
 
   // Contadores nas Abas de Filtro
   const countTodas = document.getElementById('count-tab-todas');
   const countAPagar = document.getElementById('count-tab-a-pagar');
+  const countReservadas = document.getElementById('count-tab-reservadas');
   const countPagas = document.getElementById('count-tab-pagas');
   const countAtrasadas = document.getElementById('count-tab-atrasadas');
 
   if (countTodas) countTodas.textContent = data.countTotal;
-  if (countAPagar) countAPagar.textContent = data.countPendentes;
+  if (countAPagar) countAPagar.textContent = data.countPendentesAbertas;
+  if (countReservadas) countReservadas.textContent = data.countReservadas;
   if (countPagas) countPagas.textContent = data.countPagas;
   if (countAtrasadas) countAtrasadas.textContent = data.countAtrasadas;
 
@@ -1061,7 +1173,9 @@ function renderBillsView() {
 
   // Filtro por Status
   if (appState.activeFilter === 'a-pagar') {
-    filtered = filtered.filter(b => b.status !== 'paid');
+    filtered = filtered.filter(b => b.status === 'pending' || (b.nature === 'receita' && b.status !== 'paid'));
+  } else if (appState.activeFilter === 'reservadas') {
+    filtered = filtered.filter(b => b.status === 'reserved');
   } else if (appState.activeFilter === 'pagas') {
     filtered = filtered.filter(b => b.status === 'paid');
   } else if (appState.activeFilter === 'atrasadas') {
@@ -1090,6 +1204,7 @@ function renderBillsView() {
 
   // Separar em grupos amigáveis
   const groupAtrasadas = [];
+  const groupReservadas = [];
   const groupHoje7Dias = [];
   const groupMaisAdiante = [];
   const groupPagas = [];
@@ -1100,6 +1215,11 @@ function renderBillsView() {
   filtered.forEach(bill => {
     if (bill.status === 'paid') {
       groupPagas.push(bill);
+      return;
+    }
+
+    if (bill.status === 'reserved') {
+      groupReservadas.push(bill);
       return;
     }
 
@@ -1122,6 +1242,9 @@ function renderBillsView() {
 
   if (groupAtrasadas.length > 0) {
     html += renderBillGroup('Pendentes Atrasados', groupAtrasadas, 'bg-error', 'text-error');
+  }
+  if (groupReservadas.length > 0) {
+    html += renderBillGroup('Dinheiro Reservado (Bloqueado)', groupReservadas, 'bg-sky-500', 'text-sky-700 dark:text-sky-300');
   }
   if (groupHoje7Dias.length > 0) {
     html += renderBillGroup('Hoje e Próximos 7 Dias', groupHoje7Dias, 'bg-amber-500 animate-pulse', 'text-on-surface');
@@ -1158,6 +1281,7 @@ function renderBillCard(bill) {
   const cat = getCategoryInfo(bill.category, bill.nature);
   const dueInfo = getBillDueInfo(bill.dueDate, bill.status, bill.nature);
   const isPaid = bill.status === 'paid';
+  const isReserved = bill.status === 'reserved';
 
   let installmentInfo = '';
   if (bill.type === 'parcelada' && bill.totalInstallments > 1) {
@@ -1169,16 +1293,66 @@ function renderBillCard(bill) {
   const amountColor = isReceita ? 'text-secondary' : 'text-on-surface';
   const amountSign = isReceita ? '+' : '-';
 
-  const actionBtnText = isReceita 
-    ? (isPaid ? '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Recebido</span>' : '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">arrow_downward</span> Receber</span>')
-    : (isPaid ? '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">done</span> Paga</span>' : 'Pagar');
+  let reserveButtonHtml = '';
+  let payButtonHtml = '';
 
-  const actionBtnClass = isPaid
-    ? 'bg-secondary text-on-secondary'
-    : (isReceita ? 'bg-secondary text-on-secondary hover:opacity-90' : 'bg-primary text-on-primary hover:opacity-90');
+  if (isReceita) {
+    if (isPaid) {
+      payButtonHtml = `
+        <button onclick="toggleBillPayment('${bill.id}')" class="px-3 h-7 rounded-lg bg-secondary text-on-secondary font-label-md text-[11px] font-medium flex items-center gap-1 shadow-sm active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[14px]">done</span>
+          <span>Recebido</span>
+        </button>
+      `;
+    } else {
+      payButtonHtml = `
+        <button onclick="toggleBillPayment('${bill.id}')" class="px-3 h-7 rounded-lg bg-secondary text-on-secondary hover:opacity-90 font-label-md text-[11px] font-medium flex items-center gap-1 shadow-sm active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+          <span>Receber</span>
+        </button>
+      `;
+    }
+  } else {
+    if (isPaid) {
+      payButtonHtml = `
+        <button onclick="toggleBillPayment('${bill.id}')" class="px-3 h-7 rounded-lg bg-secondary text-on-secondary font-label-md text-[11px] font-medium flex items-center gap-1 shadow-sm active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[14px]">done</span>
+          <span>Pago</span>
+        </button>
+      `;
+    } else if (isReserved) {
+      reserveButtonHtml = `
+        <button onclick="toggleBillReserved('${bill.id}')" title="Desfazer reserva deste dinheiro" class="px-2 h-7 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-sm text-[10px] font-medium flex items-center gap-1 transition-colors">
+          <span class="material-symbols-outlined text-[14px]">lock_open</span>
+          <span>Liberar</span>
+        </button>
+      `;
+      payButtonHtml = `
+        <button onclick="toggleBillPayment('${bill.id}')" title="Liquidar conta reservada" class="px-3 h-7 rounded-lg bg-primary text-on-primary hover:opacity-90 font-label-md text-[11px] font-medium flex items-center gap-1 shadow-sm active:scale-95 transition-all">
+          Pagar
+        </button>
+      `;
+    } else {
+      reserveButtonHtml = `
+        <button onclick="toggleBillReserved('${bill.id}')" title="Reservar dinheiro na conta para esta conta" class="px-2 h-7 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-400/30 font-label-sm text-[10px] font-semibold flex items-center gap-1 transition-all active:scale-95">
+          <span class="material-symbols-outlined text-[13px]">lock</span>
+          <span>Reservar</span>
+        </button>
+      `;
+      payButtonHtml = `
+        <button onclick="toggleBillPayment('${bill.id}')" class="px-3 h-7 rounded-lg bg-primary text-on-primary hover:opacity-90 font-label-md text-[11px] font-medium flex items-center gap-1 shadow-sm active:scale-95 transition-all">
+          Pagar
+        </button>
+      `;
+    }
+  }
+
+  const cardBorder = isReserved 
+    ? 'border-l-4 border-l-sky-500 bg-sky-500/[0.03] dark:bg-sky-950/20' 
+    : '';
 
   return `
-    <article class="bill-card bg-surface-container-lowest rounded-xl p-3 shadow-sm flex flex-col gap-2 transition-transform active:scale-[0.99] border border-surface-container-low ${isPaid ? 'opacity-80' : ''}" data-id="${bill.id}">
+    <article class="bill-card bg-surface-container-lowest rounded-xl p-3 shadow-sm flex flex-col gap-2 transition-transform active:scale-[0.99] border border-surface-container-low ${cardBorder} ${isPaid ? 'opacity-80' : ''}" data-id="${bill.id}">
       <div class="flex items-start justify-between gap-2.5">
         <div class="flex items-center gap-2.5 min-w-0">
           <div class="w-10 h-10 rounded-xl ${cat.bg} flex items-center justify-center shrink-0 shadow-sm">
@@ -1189,8 +1363,8 @@ function renderBillCard(bill) {
               <h3 class="font-headline-sm text-[14px] leading-snug text-on-surface truncate font-semibold ${isPaid ? 'line-through decoration-outline/60' : ''}">
                 ${escapeHtml(bill.name)}
               </h3>
-              <span class="px-1.5 py-0.2 rounded-full font-label-sm text-[9px] font-semibold ${isReceita ? 'bg-secondary/15 text-secondary' : 'bg-error-container/30 text-error'}">
-                ${isReceita ? 'Receita' : 'Despesa'}
+              <span class="px-1.5 py-0.2 rounded-full font-label-sm text-[9px] font-semibold ${isReceita ? 'bg-secondary/15 text-secondary' : (isReserved ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300' : 'bg-error-container/30 text-error')}">
+                ${isReceita ? 'Receita' : (isReserved ? '🔒 Reservada' : 'Despesa')}
               </span>
             </div>
             <p class="font-body-sm text-[11px] text-on-surface-variant flex items-center gap-1 flex-wrap mt-0.5">
@@ -1219,10 +1393,9 @@ function renderBillCard(bill) {
           <button onclick="confirmDeleteBill('${bill.id}')" title="Excluir" class="w-7 h-7 rounded-lg bg-surface-container hover:bg-error-container text-on-surface-variant hover:text-error flex items-center justify-center transition-colors">
             <span class="material-symbols-outlined text-[16px]">delete</span>
           </button>
+          ${reserveButtonHtml}
         </div>
-        <button onclick="toggleBillPayment('${bill.id}')" class="px-3 h-7 rounded-lg ${actionBtnClass} font-label-md text-[11px] font-medium flex items-center gap-1 shadow-sm active:scale-95 transition-all">
-          ${actionBtnText}
-        </button>
+        ${payButtonHtml}
       </div>
     </article>
   `;
@@ -1236,7 +1409,11 @@ function setBillFilter(filterName) {
     if (f === filterName) {
       btn.className = 'filter-tab px-3 h-7 rounded-full bg-primary text-on-primary font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all';
     } else {
-      btn.className = 'filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all';
+      if (f === 'reservadas') {
+        btn.className = 'filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-sky-700 dark:text-sky-300 font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all';
+      } else {
+        btn.className = 'filter-tab px-3 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-[11px] flex items-center gap-1 shadow-sm transition-all';
+      }
     }
   });
 
@@ -1988,6 +2165,8 @@ function renderPlanningView() {
   // Saldo Projetado Final
   const projectedBalanceEl = document.getElementById('planning-projected-balance');
   const statusBadge = document.getElementById('planning-status-badge');
+  const cleanBalanceEl = document.getElementById('planning-clean-balance');
+  const reservedBalanceEl = document.getElementById('planning-reserved-balance');
 
   if (projectedBalanceEl) projectedBalanceEl.textContent = formatCurrency(data.saldoProjetadoFinal);
   if (statusBadge) {
@@ -1998,6 +2177,19 @@ function renderPlanningView() {
       statusBadge.className = 'px-2 py-0.5 rounded-full bg-error-container text-on-error-container dark:bg-red-950/80 dark:text-red-300 font-label-sm text-[10px] font-semibold';
       statusBadge.textContent = 'Déficit Previsto';
     }
+  }
+
+  if (cleanBalanceEl) {
+    cleanBalanceEl.textContent = formatCurrency(data.saldoLimpoDisponivel);
+    if (data.saldoLimpoDisponivel < 0) {
+      cleanBalanceEl.className = 'font-amount-metric text-[15px] text-rose-500 dark:text-rose-400 font-bold tabular-nums mt-0.5';
+    } else {
+      cleanBalanceEl.className = 'font-amount-metric text-[15px] text-emerald-600 dark:text-emerald-300 font-bold tabular-nums mt-0.5';
+    }
+  }
+
+  if (reservedBalanceEl) {
+    reservedBalanceEl.textContent = formatCurrency(data.totalDespesasReservadas);
   }
 
   // Grid Planejado vs Realizado (2x2)
@@ -2563,6 +2755,44 @@ async function handleSaveBillForm() {
       updateSupabaseSyncStatus('connected');
     } catch (err) {
       console.error('Falha ao salvar no Supabase:', err);
+      updateSupabaseSyncStatus('error');
+    }
+  }
+}
+
+async function toggleBillReserved(billId) {
+  const allBills = getStoredBills();
+  const bill = allBills.find(b => b.id === billId);
+  if (!bill) return;
+
+  if (bill.status === 'reserved') {
+    bill.status = 'pending';
+    showToast(`Reserva de "${bill.name}" desfeita (dinheiro liberado no saldo limpo).`);
+  } else {
+    bill.status = 'reserved';
+    showToast(`R$ ${formatCurrency(bill.amount)} reservado para "${bill.name}"!`);
+  }
+  bill.updatedAt = new Date().toISOString();
+
+  saveStoredBills(allBills);
+  renderCurrentView();
+
+  // Sincronização Supabase
+  if (supabaseClient) {
+    try {
+      updateSupabaseSyncStatus('syncing');
+      const { error } = await supabaseClient
+        .from('bills')
+        .update({
+          status: bill.status,
+          updated_at: bill.updatedAt
+        })
+        .eq('id', billId);
+
+      if (error) console.error('Erro ao atualizar reserva no Supabase:', error);
+      updateSupabaseSyncStatus('connected');
+    } catch (err) {
+      console.error('Falha ao sincronizar no Supabase:', err);
       updateSupabaseSyncStatus('error');
     }
   }

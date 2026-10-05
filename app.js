@@ -64,6 +64,8 @@ const appState = {
   activeTab: 'inicio', // 'inicio', 'contas', 'planejamento'
   activeFilter: 'todas', // 'todas', 'a-pagar', 'pagas', 'atrasadas'
   natureFilter: 'todos', // 'todos', 'despesas', 'receitas'
+  homeNatureFilter: 'todos', // 'todos', 'receitas', 'despesas'
+  homeCategoryFilter: 'todas', // 'todas' ou id da categoria selecionada
   searchQuery: '',
   entryNature: 'despesa', // 'despesa' ou 'receita'
   selectedCategory: 'Moradia',
@@ -755,8 +757,105 @@ function renderHomeView() {
   if (progressPaid) progressPaid.textContent = `${formatCurrency(data.totalDespesasPagas)} quitadas`;
   if (progressRemaining) progressRemaining.textContent = `Faltam ${formatCurrency(data.totalDespesasPendentes)}`;
 
+  // Atualizar visual dos filtros de Vencimentos do Mês
+  updateHomeNatureButtonsUI();
+  renderHomeCategoryPills();
+
   // Próximos Vencimentos
   renderHomeUpcomingBills(data.monthBills);
+}
+
+function updateHomeNatureButtonsUI() {
+  const btnTodos = document.getElementById('home-nature-todos');
+  const btnReceitas = document.getElementById('home-nature-receitas');
+  const btnDespesas = document.getElementById('home-nature-despesas');
+  if (!btnTodos || !btnReceitas || !btnDespesas) return;
+
+  const activeNature = appState.homeNatureFilter || 'todos';
+
+  if (activeNature === 'todos') {
+    btnTodos.className = 'home-nature-pill px-3 py-1 rounded-full bg-primary text-on-primary font-label-md text-[11px] font-semibold shrink-0 shadow-sm transition-all';
+    btnReceitas.className = 'home-nature-pill px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-[11px] shrink-0 transition-all flex items-center gap-1';
+    btnDespesas.className = 'home-nature-pill px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-[11px] shrink-0 transition-all flex items-center gap-1';
+  } else if (activeNature === 'receitas') {
+    btnTodos.className = 'home-nature-pill px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-[11px] shrink-0 transition-all';
+    btnReceitas.className = 'home-nature-pill px-3 py-1 rounded-full bg-secondary text-on-secondary font-label-md text-[11px] font-semibold shrink-0 shadow-sm transition-all flex items-center gap-1';
+    btnDespesas.className = 'home-nature-pill px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-[11px] shrink-0 transition-all flex items-center gap-1';
+  } else if (activeNature === 'despesas') {
+    btnTodos.className = 'home-nature-pill px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-[11px] shrink-0 transition-all';
+    btnReceitas.className = 'home-nature-pill px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-[11px] shrink-0 transition-all flex items-center gap-1';
+    btnDespesas.className = 'home-nature-pill px-3 py-1 rounded-full bg-error text-on-error font-label-md text-[11px] font-semibold shrink-0 shadow-sm transition-all flex items-center gap-1';
+  }
+}
+
+function setHomeNatureFilter(nature) {
+  appState.homeNatureFilter = nature;
+  appState.homeCategoryFilter = 'todas';
+  updateHomeNatureButtonsUI();
+  renderHomeCategoryPills();
+  const data = getMonthFinancialData(appState.currentYear, appState.currentMonth);
+  renderHomeUpcomingBills(data.monthBills);
+}
+
+function setHomeCategoryFilter(categoryId) {
+  appState.homeCategoryFilter = categoryId;
+  renderHomeCategoryPills();
+  const data = getMonthFinancialData(appState.currentYear, appState.currentMonth);
+  renderHomeUpcomingBills(data.monthBills);
+}
+
+function renderHomeCategoryPills() {
+  const container = document.getElementById('home-category-pills');
+  if (!container) return;
+
+  let categories = [];
+  let allLabel = 'Todas';
+
+  if (appState.homeNatureFilter === 'receitas') {
+    categories = INCOME_CATEGORIES;
+    allLabel = 'Todas as Receitas';
+  } else if (appState.homeNatureFilter === 'despesas') {
+    categories = EXPENSE_CATEGORIES;
+    allLabel = 'Todas as Despesas';
+  } else {
+    // Todas as naturezas
+    const seen = new Set();
+    categories = [];
+    [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].forEach(cat => {
+      if (!seen.has(cat.id)) {
+        seen.add(cat.id);
+        categories.push(cat);
+      }
+    });
+    allLabel = 'Todas as Categorias';
+  }
+
+  const isAllSelected = (appState.homeCategoryFilter === 'todas');
+  const allBtnClass = isAllSelected
+    ? 'px-2.5 py-1 rounded-full bg-primary/20 text-primary dark:bg-primary/30 dark:text-primary font-label-md text-[11px] font-bold shrink-0 shadow-sm border border-primary/40'
+    : 'px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-[11px] shrink-0 transition-all border border-transparent';
+
+  let html = `
+    <button onclick="setHomeCategoryFilter('todas')" class="${allBtnClass}">
+      ${allLabel}
+    </button>
+  `;
+
+  html += categories.map(cat => {
+    const isSelected = (appState.homeCategoryFilter === cat.id);
+    const btnClass = isSelected
+      ? 'px-2.5 py-1 rounded-full bg-primary/20 text-primary dark:bg-primary/30 dark:text-primary font-label-md text-[11px] font-bold shrink-0 shadow-sm border border-primary/40 flex items-center gap-1'
+      : 'px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-[11px] shrink-0 transition-all border border-transparent flex items-center gap-1';
+
+    return `
+      <button onclick="setHomeCategoryFilter('${escapeHtml(cat.id)}')" class="${btnClass}">
+        <span class="material-symbols-outlined text-[13px]">${cat.icon}</span>
+        <span>${escapeHtml(cat.label || cat.id)}</span>
+      </button>
+    `;
+  }).join('');
+
+  container.innerHTML = html;
 }
 
 function renderMonthPills(containerId) {
@@ -806,16 +905,39 @@ function renderHomeUpcomingBills(bills) {
   const emptyState = document.getElementById('home-empty-state');
   if (!listContainer) return;
 
-  if (bills.length === 0) {
+  // Filtragem por Natureza (Todos, Receitas, Despesas)
+  let filtered = [...bills];
+  if (appState.homeNatureFilter === 'receitas') {
+    filtered = filtered.filter(b => b.nature === 'receita');
+  } else if (appState.homeNatureFilter === 'despesas') {
+    filtered = filtered.filter(b => b.nature !== 'receita');
+  }
+
+  // Filtragem por Categoria
+  if (appState.homeCategoryFilter && appState.homeCategoryFilter !== 'todas') {
+    filtered = filtered.filter(b => b.category === appState.homeCategoryFilter);
+  }
+
+  if (filtered.length === 0) {
     listContainer.innerHTML = '';
-    if (emptyState) emptyState.classList.remove('hidden');
+    if (emptyState) {
+      emptyState.classList.remove('hidden');
+      const emptyText = emptyState.querySelector('p');
+      if (emptyText) {
+        if (bills.length > 0) {
+          emptyText.textContent = 'Nenhum lançamento encontrado para os filtros selecionados.';
+        } else {
+          emptyText.textContent = 'Nenhuma conta cadastrada para este mês.';
+        }
+      }
+    }
     return;
   }
 
   if (emptyState) emptyState.classList.add('hidden');
 
   // Ordenar por vencimento
-  const sorted = [...bills].sort((a, b) => {
+  const sorted = [...filtered].sort((a, b) => {
     if (a.status === 'paid' && b.status !== 'paid') return 1;
     if (a.status !== 'paid' && b.status === 'paid') return -1;
     return a.dueDate.localeCompare(b.dueDate);

@@ -171,8 +171,16 @@
                 <span class="material-symbols-outlined text-[18px]">chevron_left</span>
               </button>
               <div class="flex items-center gap-1.5 px-2">
-                <h2 id="home-month-label" class="font-headline-sm text-[16px] text-on-surface font-semibold tracking-tight">--</h2>
-                <span id="home-current-badge" class="bg-primary/10 text-primary font-label-sm text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">Atual</span>
+                <div class="flex flex-col">
+                  <div class="flex items-center gap-1.5">
+                    <h2 id="home-month-label" class="font-headline-sm text-[15px] text-on-surface font-semibold tracking-tight">--</h2>
+                    <span id="home-current-badge" class="bg-primary/10 text-primary font-label-sm text-[9px] px-1.5 py-0.2 rounded-full uppercase tracking-wider font-semibold">Atual</span>
+                  </div>
+                  <div onclick="switchTab('planejamento')" class="flex items-center gap-1 text-[11px] text-secondary font-medium cursor-pointer hover:underline mt-0.5" title="Toque para ver ou alterar seu ciclo financeiro">
+                    <span class="material-symbols-outlined text-[13px]">calendar_month</span>
+                    <span id="home-cycle-badge" class="font-label-sm text-[10px] font-semibold">Ciclo: 30/Set a 29/Out</span>
+                  </div>
+                </div>
               </div>
               <button onclick="setMonth(1)" aria-label="Próximo mês" class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-colors active:scale-95">
                 <span class="material-symbols-outlined text-[18px]">chevron_right</span>
@@ -394,9 +402,12 @@
             <button onclick="setMonth(-1)" aria-label="Mês anterior" class="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors active:scale-95 text-on-surface flex items-center justify-center">
               <span class="material-symbols-outlined text-[18px]">chevron_left</span>
             </button>
-            <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low cursor-pointer">
+            <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low cursor-pointer" onclick="switchTab('planejamento')" title="Toque para ver ou alterar seu ciclo financeiro">
               <span class="material-symbols-outlined text-on-surface-variant text-[16px]">calendar_month</span>
-              <span id="bills-month-label" class="font-headline-sm text-[15px] text-on-surface font-semibold">--</span>
+              <div class="flex flex-col">
+                <span id="bills-month-label" class="font-headline-sm text-[14px] text-on-surface font-semibold leading-tight">--</span>
+                <span id="bills-cycle-badge" class="font-label-sm text-[9px] text-secondary font-semibold leading-none">30/Set a 29/Out</span>
+              </div>
             </div>
             <button onclick="setMonth(1)" aria-label="Próximo mês" class="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors active:scale-95 text-on-surface flex items-center justify-center">
               <span class="material-symbols-outlined text-[18px]">chevron_right</span>
@@ -808,18 +819,49 @@
       <!-- TAB 4: PLANEJAMENTO (Ajuste de Saldo & Projeção Futura)        -->
       <!-- ============================================================== -->
       <section id="tab-view-planejamento" class="tab-content space-y-3">
-        <!-- Selector de Período -->
+        <!-- Selector de Período & Ciclo -->
         <div class="flex items-center justify-between bg-surface-container-lowest p-2 rounded-xl shadow-sm border border-surface-container-low">
           <button onclick="setMonth(-1)" aria-label="Mês Anterior" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors active:scale-95">
             <span class="material-symbols-outlined text-[18px]">chevron_left</span>
           </button>
-          <div class="flex items-center gap-1.5 cursor-pointer px-2 py-0.5 rounded-lg hover:bg-surface-container transition-colors">
-            <span class="material-symbols-outlined text-secondary text-[18px]">calendar_month</span>
-            <span id="planning-month-label" class="font-headline-sm text-[15px] text-on-surface font-semibold">--</span>
+          <div class="flex flex-col items-center cursor-pointer px-2 py-0.5 rounded-lg hover:bg-surface-container transition-colors">
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-secondary text-[16px]">calendar_month</span>
+              <span id="planning-month-label" class="font-headline-sm text-[15px] text-on-surface font-semibold">--</span>
+            </div>
+            <span id="planning-cycle-badge" class="font-label-sm text-[10px] text-secondary font-semibold">Ciclo: 30/Set a 29/Out</span>
           </div>
           <button onclick="setMonth(1)" aria-label="Próximo Mês" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors active:scale-95">
             <span class="material-symbols-outlined text-[18px]">chevron_right</span>
           </button>
+        </div>
+
+        <!-- Card de Configuração do Ciclo Financeiro (Dia de Recebimento) -->
+        <div class="bg-surface-container-lowest p-3.5 rounded-xl shadow-sm border border-surface-container-low space-y-2.5 relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-primary text-[18px]">event_repeat</span>
+              <h3 class="font-headline-sm text-[14px] text-on-surface font-semibold">Ciclo do Mês Financeiro</h3>
+            </div>
+            <span id="planning-cycle-summary-badge" class="px-2 py-0.5 rounded-full bg-primary/15 text-primary font-label-sm text-[10px] font-bold">
+              Inicia dia 30
+            </span>
+          </div>
+          
+          <p class="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
+            Selecione o dia em que você recebe seu salário. Seu ciclo financeiro abrirá nessa data e cobrirá todas as despesas até a véspera do próximo recebimento.
+          </p>
+
+          <!-- Pílulas de Seleção Rápida do Dia de Recebimento -->
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5" id="cycle-day-pills">
+            <!-- Gerado dinamicamente via JS -->
+          </div>
+
+          <!-- Indicador do Intervalo Ativo do Ciclo -->
+          <div class="bg-surface-container-low px-2.5 py-1.5 rounded-lg flex items-center justify-between text-[11px] border border-surface-container-high">
+            <span class="text-on-surface-variant font-medium">Período deste ciclo:</span>
+            <span id="planning-cycle-interval-text" class="text-secondary font-bold tabular-nums">30/Set a 29/Out</span>
+          </div>
         </div>
 
         <!-- Card Interativo: Ajuste de Saldo Inicial -->
@@ -828,13 +870,13 @@
             <div class="flex flex-col space-y-0.5">
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                <span class="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider">Saldo Inicial deste Mês</span>
+                <span class="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider">Saldo Inicial deste Ciclo</span>
                 <span id="planning-initial-badge" class="px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-[10px] text-on-surface-variant font-medium">Auto</span>
               </div>
               <div class="flex items-baseline gap-2">
                 <span id="planning-initial-display" class="font-display-currency-mobile text-[24px] text-on-surface tabular-nums font-bold">R$ 0,00</span>
               </div>
-              <p id="planning-initial-desc" class="font-body-sm text-[11px] text-on-surface-variant">Valor disponível no dia 1º.</p>
+              <p id="planning-initial-desc" class="font-body-sm text-[11px] text-on-surface-variant">Valor disponível no dia de início do ciclo.</p>
             </div>
             <button onclick="toggleInlineBalanceEdit()" aria-label="Editar Saldo Inicial" class="flex items-center justify-center w-7 h-7 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all active:scale-90" id="btn-edit-balance">
               <span class="material-symbols-outlined text-[16px]">edit</span>

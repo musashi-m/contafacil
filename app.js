@@ -15,11 +15,12 @@ const SUPABASE_CONFIG = {
 let supabaseClient = null;
 let isSupabaseConnected = false;
 
-// Chaves de armazenamento (Fallback local e Tema)
+// Chaves de armazenamento (Fallback local, Tema e Ciclo)
 const STORAGE_KEYS = {
   BILLS: 'contafacil_bills',
   BALANCES: 'contafacil_balances',
-  THEME: 'contafacil_theme'
+  THEME: 'contafacil_theme',
+  CYCLE_START_DAY: 'contafacil_cycle_start_day'
 };
 
 // Categorias de Despesas (Saídas)
@@ -61,6 +62,7 @@ const appState = {
   currentDate: new Date(),
   currentYear: new Date().getFullYear(),
   currentMonth: new Date().getMonth() + 1, // 1-12
+  cycleStartDay: 30, // 1 a 31 (Padrão: dia 30 - Recebimento no final do mês)
   activeTab: 'inicio', // 'inicio', 'contas', 'relatorios', 'planejamento'
   activeFilter: 'todas', // 'todas', 'a-pagar', 'pagas', 'atrasadas'
   natureFilter: 'todos', // 'todos', 'despesas', 'receitas'
@@ -98,6 +100,7 @@ function saveLocalBackup() {
   try {
     localStorage.setItem(STORAGE_KEYS.BILLS, JSON.stringify(appState.bills));
     localStorage.setItem(STORAGE_KEYS.BALANCES, JSON.stringify(appState.balances));
+    localStorage.setItem(STORAGE_KEYS.CYCLE_START_DAY, String(appState.cycleStartDay || 30));
   } catch (e) {
     console.error('Erro ao salvar backup local:', e);
   }
@@ -107,8 +110,17 @@ function loadLocalBackup() {
   try {
     const rawBills = localStorage.getItem(STORAGE_KEYS.BILLS);
     const rawBalances = localStorage.getItem(STORAGE_KEYS.BALANCES);
+    const rawCycle = localStorage.getItem(STORAGE_KEYS.CYCLE_START_DAY);
     if (rawBills) appState.bills = JSON.parse(rawBills);
     if (rawBalances) appState.balances = JSON.parse(rawBalances);
+    if (rawCycle) {
+      const parsed = parseInt(rawCycle, 10);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 31) {
+        appState.cycleStartDay = parsed;
+      }
+    } else {
+      appState.cycleStartDay = 30; // Padrão dia 30
+    }
   } catch (e) {
     console.error('Erro ao ler backup local:', e);
   }
@@ -305,6 +317,81 @@ function getYearMonthKey(year, month) {
   return `${year}-${String(month).padStart(2, '0')}`;
 }
 
+// Retorna o total de dias de um determinado mês
+function getDaysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+// Calcula o intervalo exato de datas para o Ciclo Financeiro do usuário
+// Ex: para Outubro/2026 com ciclo iniciando no dia 30, vai de 30/09/2026 a 29/10/2026
+function getCycleRange(year, month, startDay = (appState.cycleStartDay || 30)) {
+  const parsedStartDay = parseInt(startDay, 10) || 30;
+
+  if (parsedStartDay === 1) {
+    const lastDay = getDaysInMonth(year, month);
+    const startStr = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    return {
+      startStr,
+      endStr,
+      startDate: new Date(year, month - 1, 1),
+      endDate: new Date(year, month - 1, lastDay),
+      label: `${MONTH_NAMES[month - 1]} ${year}`,
+      shortLabel: `${MONTH_SHORT[month - 1]} ${year}`,
+      periodDescription: `01/${String(month).padStart(2, '0')} a ${String(lastDay).padStart(2, '0')}/${String(month).padStart(2, '0')}`,
+      isCustomCycle: false,
+      startDay: 1
+    };
+  }
+
+  // Ciclo Personalizado: o ciclo da competência (year, month) começa no mês anterior (prevMonth, prevYear)
+  let prevMonth = month - 1;
+  let prevYear = year;
+  if (prevMonth < 1) {
+    prevMonth = 12;
+    prevYear = year - 1;
+  }
+
+  const daysInPrevMonth = getDaysInMonth(prevYear, prevMonth);
+  const actualStartDay = Math.min(parsedStartDay, daysInPrevMonth);
+
+  const daysInCurMonth = getDaysInMonth(year, month);
+  const nextCycleStartDay = Math.min(parsedStartDay, daysInCurMonth);
+  const actualEndDay = nextCycleStartDay - 1;
+
+  const startStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(actualStartDay).padStart(2, '0')}`;
+  const endStr = `${year}-${String(month).padStart(2, '0')}-${String(actualEndDay).padStart(2, '0')}`;
+
+  const startDate = new Date(prevYear, prevMonth - 1, actualStartDay);
+  const endDate = new Date(year, month - 1, actualEndDay);
+
+  const periodDescription = `${String(actualStartDay).padStart(2, '0')}/${MONTH_SHORT[prevMonth - 1]} a ${String(actualEndDay).padStart(2, '0')}/${MONTH_SHORT[month - 1]}`;
+
+  return {
+    startStr,
+    endStr,
+    startDate,
+    endDate,
+    label: `${MONTH_NAMES[month - 1]} ${year}`,
+    shortLabel: `${MONTH_SHORT[month - 1]} ${year}`,
+    periodDescription,
+    isCustomCycle: true,
+    startDay: parsedStartDay
+  };
+}
+
+function setCycleStartDay(day) {
+  const parsed = parseInt(day, 10);
+  if (isNaN(parsed) || parsed < 1 || parsed > 31) return;
+
+  appState.cycleStartDay = parsed;
+  saveLocalBackup();
+
+  const cycle = getCycleRange(appState.currentYear, appState.currentMonth, parsed);
+  showToast(`Ciclo financeiro definido: Inicia dia ${parsed} (${cycle.periodDescription})!`);
+  renderCurrentView();
+}
+
 function formatDateBR(dateStr) {
   if (!dateStr) return '';
   const parts = dateStr.split('-');
@@ -491,7 +578,7 @@ function getEffectiveInitialBalance(year, month) {
   let runningBalance = parseFloat(balances[anchorKey]) || 0;
   let lastProcessedKey = anchorKey;
 
-  // Percorre mês a mês acumulando entradas e saídas para projetar o saldo final
+  // Percorre mês a mês acumulando entradas e saídas do ciclo para projetar o saldo final
   while (getYearMonthKey(curY, curM) < targetKey) {
     const curKey = getYearMonthKey(curY, curM);
 
@@ -500,12 +587,13 @@ function getEffectiveInitialBalance(year, month) {
       runningBalance = parseFloat(balances[curKey]) || 0;
     }
 
-    // Calcula o total de receitas e despesas previstas deste mês
-    const monthBills = allBills.filter(b => b.dueDate && b.dueDate.startsWith(curKey));
+    // Calcula o total de receitas e despesas previstas deste ciclo financeiro
+    const curCycle = getCycleRange(curY, curM, appState.cycleStartDay);
+    const monthBills = allBills.filter(b => b.dueDate && b.dueDate >= curCycle.startStr && b.dueDate <= curCycle.endStr);
     const monthReceitas = monthBills.filter(b => b.nature === 'receita').reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
     const monthDespesas = monthBills.filter(b => b.nature !== 'receita').reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
 
-    // Saldo projetado ao fim do mês
+    // Saldo projetado ao fim do ciclo
     runningBalance = runningBalance + monthReceitas - monthDespesas;
     lastProcessedKey = curKey;
 
@@ -531,10 +619,11 @@ function getEffectiveInitialBalance(year, month) {
 function getMonthFinancialData(year, month) {
   const ymKey = getYearMonthKey(year, month);
   const allBills = getStoredBills();
+  const cycle = getCycleRange(year, month, appState.cycleStartDay);
 
-  // Filtrar lançamentos que vencem neste ano/mês
+  // Filtrar lançamentos que pertencem ao ciclo deste mês financeiro
   const monthBills = allBills.filter(bill => {
-    return bill.dueDate && bill.dueDate.startsWith(ymKey);
+    return bill.dueDate && bill.dueDate >= cycle.startStr && bill.dueDate <= cycle.endStr;
   });
 
   // Saldo inicial contínuo (herdado ou manual)
@@ -624,6 +713,7 @@ function getMonthFinancialData(year, month) {
     year,
     month,
     ymKey,
+    cycle,
     monthBills,
     initialBalance,
     isManualBalance,
@@ -754,6 +844,12 @@ function renderHomeView() {
   const currentBadge = document.getElementById('home-current-badge');
   if (currentBadge) {
     currentBadge.style.display = isCurrentMonth ? 'inline-block' : 'none';
+  }
+
+  // Badge do Ciclo Financeiro
+  const cycleBadge = document.getElementById('home-cycle-badge');
+  if (cycleBadge && data.cycle) {
+    cycleBadge.textContent = `Ciclo: ${data.cycle.periodDescription}`;
   }
 
   // Pílulas de meses rápidos
@@ -1122,9 +1218,14 @@ function renderBillsView() {
   const data = getMonthFinancialData(appState.currentYear, appState.currentMonth);
   const monthName = MONTH_NAMES[appState.currentMonth - 1];
 
-  // Seletor de mês
+  // Seletor de mês e badge de ciclo
   const monthLabel = document.getElementById('bills-month-label');
   if (monthLabel) monthLabel.textContent = `${monthName} ${appState.currentYear}`;
+
+  const billsCycleBadge = document.getElementById('bills-cycle-badge');
+  if (billsCycleBadge && data.cycle) {
+    billsCycleBadge.textContent = data.cycle.periodDescription;
+  }
 
   // Metric Ribbon
   const ribbonReceitas = document.getElementById('bills-ribbon-receitas');
@@ -1555,9 +1656,12 @@ function getReportDateRange() {
   const period = appState.reportPeriod || 'this_month';
 
   if (period === 'this_month') {
-    start = new Date(appState.currentYear, appState.currentMonth - 1, 1);
-    end = new Date(appState.currentYear, appState.currentMonth, 0);
-    label = `${MONTH_NAMES[appState.currentMonth - 1]} de ${appState.currentYear}`;
+    const cycle = getCycleRange(appState.currentYear, appState.currentMonth, appState.cycleStartDay);
+    start = cycle.startDate;
+    end = cycle.endDate;
+    label = cycle.isCustomCycle 
+      ? `${MONTH_NAMES[appState.currentMonth - 1]} de ${appState.currentYear} (${cycle.periodDescription})`
+      : `${MONTH_NAMES[appState.currentMonth - 1]} de ${appState.currentYear}`;
   } else if (period === 'last_30_days') {
     start = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
     end = new Date(now.getTime());
@@ -2124,9 +2228,27 @@ function renderPlanningView() {
   const data = getMonthFinancialData(appState.currentYear, appState.currentMonth);
   const monthName = MONTH_NAMES[appState.currentMonth - 1];
 
-  // Seletor de mês
+  // Seletor de mês e badge de ciclo
   const monthLabel = document.getElementById('planning-month-label');
   if (monthLabel) monthLabel.textContent = `${monthName} ${appState.currentYear}`;
+
+  const planningCycleBadge = document.getElementById('planning-cycle-badge');
+  if (planningCycleBadge && data.cycle) {
+    planningCycleBadge.textContent = `Ciclo: ${data.cycle.periodDescription}`;
+  }
+
+  const planningSummaryBadge = document.getElementById('planning-cycle-summary-badge');
+  if (planningSummaryBadge) {
+    const curDay = appState.cycleStartDay || 30;
+    planningSummaryBadge.textContent = curDay === 30 ? 'Dia 30 (Fim de Mês)' : (curDay === 1 ? 'Dia 01 (Mês Padrão)' : `Inicia dia ${curDay}`);
+  }
+
+  const planningIntervalText = document.getElementById('planning-cycle-interval-text');
+  if (planningIntervalText && data.cycle) {
+    planningIntervalText.textContent = data.cycle.periodDescription;
+  }
+
+  renderCycleDayPills();
 
   // Saldo Inicial
   const initialDisplay = document.getElementById('planning-initial-display');
@@ -2153,12 +2275,12 @@ function renderPlanningView() {
 
   if (initialDesc) {
     if (data.isManualBalance) {
-      initialDesc.textContent = `Valor fixado manualmente para o dia 1º de ${monthName}.`;
+      initialDesc.textContent = `Valor fixado manualmente para o início do ciclo (${data.cycle ? data.cycle.periodDescription : monthName}).`;
     } else if (data.sourceMonth) {
       const [sY, sM] = data.sourceMonth.split('-').map(Number);
-      initialDesc.textContent = `Projetado automaticamente a partir do saldo final de ${MONTH_NAMES[sM - 1]} ${sY}.`;
+      initialDesc.textContent = `Projetado automaticamente a partir do ciclo de ${MONTH_NAMES[sM - 1]} ${sY}.`;
     } else {
-      initialDesc.textContent = `Defina o saldo para iniciar a projeção contínua nos meses seguintes.`;
+      initialDesc.textContent = `Defina o saldo para iniciar a projeção contínua nos ciclos seguintes.`;
     }
   }
 
@@ -2234,6 +2356,36 @@ function renderPlanningView() {
   renderPlanningFutureProjections(data.saldoProjetadoFinal);
 }
 
+function renderCycleDayPills() {
+  const container = document.getElementById('cycle-day-pills');
+  if (!container) return;
+
+  const cycleOptions = [
+    { day: 30, label: 'Dia 30 (Fim de Mês)' },
+    { day: 1, label: 'Dia 01 (Mês Padrão)' },
+    { day: 5, label: 'Dia 05' },
+    { day: 10, label: 'Dia 10' },
+    { day: 15, label: 'Dia 15' },
+    { day: 20, label: 'Dia 20' },
+    { day: 25, label: 'Dia 25' }
+  ];
+
+  const currentDay = appState.cycleStartDay || 30;
+
+  container.innerHTML = cycleOptions.map(opt => {
+    const isSelected = (currentDay === opt.day);
+    const btnClass = isSelected
+      ? 'px-3 py-1 rounded-full bg-primary text-on-primary font-label-md text-[11px] font-semibold shrink-0 shadow-sm transition-transform active:scale-95'
+      : 'px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-[11px] shrink-0 transition-colors';
+
+    return `
+      <button onclick="setCycleStartDay(${opt.day})" class="${btnClass}">
+        ${opt.label}
+      </button>
+    `;
+  }).join('');
+}
+
 function renderPlanningFutureProjections(currentMonthFinalBalance) {
   const container = document.getElementById('planning-projections-container');
   if (!container) return;
@@ -2260,12 +2412,13 @@ function renderPlanningFutureProjections(currentMonthFinalBalance) {
       rollingBalance = parseFloat(balances[ymKey]) || 0;
     }
 
-    const monthBills = allBills.filter(b => b.dueDate && b.dueDate.startsWith(ymKey));
+    const curCycle = getCycleRange(y, m, appState.cycleStartDay);
+    const monthBills = allBills.filter(b => b.dueDate && b.dueDate >= curCycle.startStr && b.dueDate <= curCycle.endStr);
     const monthReceitas = monthBills.filter(b => b.nature === 'receita').reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
     const monthDespesas = monthBills.filter(b => b.nature !== 'receita').reduce((acc, b) => acc + (parseFloat(b.amount) || 0), 0);
     const sobraEstimada = rollingBalance + monthReceitas - monthDespesas;
 
-    const namesPreview = monthBills.slice(0, 3).map(b => b.name).join(', ') || 'Nenhum lançamento agendado';
+    const namesPreview = monthBills.slice(0, 3).map(b => b.name).join(', ') || 'Nenhum lançamento no ciclo';
 
     html += `
       <div class="bg-surface-container-lowest p-3 rounded-xl shadow-sm space-y-1.5 border border-surface-container-low">
@@ -2276,7 +2429,7 @@ function renderPlanningFutureProjections(currentMonthFinalBalance) {
             </div>
             <div>
               <h4 class="font-headline-sm text-[14px] text-on-surface font-semibold">${MONTH_NAMES[m - 1]} ${y}</h4>
-              <span class="font-body-sm text-[11px] text-on-surface-variant">${monthBills.length} ${monthBills.length === 1 ? 'item previsto' : 'itens previstos'}</span>
+              <span class="font-label-sm text-[10px] text-secondary font-semibold">${curCycle.periodDescription}</span>
             </div>
           </div>
           <div class="text-right">
@@ -2290,7 +2443,7 @@ function renderPlanningFutureProjections(currentMonthFinalBalance) {
           </div>
         </div>
         <div class="bg-surface-container-low px-2.5 py-1.5 rounded-lg flex items-center justify-between text-on-surface-variant">
-          <span class="font-body-sm text-[11px] truncate pr-2">${escapeHtml(namesPreview)}</span>
+          <span class="font-body-sm text-[11px] truncate pr-2">${escapeHtml(namesPreview)} (${monthBills.length} ${monthBills.length === 1 ? 'item' : 'itens'})</span>
           <button onclick="setSpecificMonth(${y}, ${m}); switchTab('contas');" class="text-primary hover:opacity-80 flex items-center gap-0.5 text-[11px] font-semibold shrink-0">
             <span>Ver</span>
             <span class="material-symbols-outlined text-[15px]">chevron_right</span>
